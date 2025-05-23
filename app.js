@@ -1,20 +1,22 @@
 function App() {
   const [inputs, setInputs] = React.useState({
     currentHomePrice: 800000,
-    currentLoanBalance: 554000,
+    currentLoanBalance: 589000,
     currentLoanRate: 3.49,
     currentLoanTerm: 30,
     currentLoanStartDate: '2022-02-01',
     currentHomeAppreciation: 3,
     newHomePrice: 1169000,
     newHomeAppreciation: 3,
-    currentEquity: 0,
     savings: 120000,
     monthlySavingsStay: 3500,
-    monthlySavingsBuy: 566800,
+    monthlySavingsBuy: 668,
     savingsInterestRate: 3.5,
     monthlyIncome: 16000,
-    monthlyDebt: 150250,
+    incomeGrowthPercent: 2,
+    monthlyExpenses: 6000,
+    inflationPercent: 2,
+    monthlyDebt: 25,
     newLoanRate: 6.75,
     newLoanTerm: 30,
     downPaymentPercent: 20,
@@ -54,35 +56,44 @@ function App() {
   };
 
   const calculateBuyNow = () => {
+    const currentEquity = inputs.currentHomePrice - inputs.currentLoanBalance;
     const downPayment = inputs.newHomePrice * (inputs.downPaymentPercent / 100);
     const closingCosts = inputs.newHomePrice * (inputs.closingCostPercent / 100);
     const realtorFees = inputs.currentHomePrice * (inputs.realtorFeePercent / 100);
-    const savingsAfterBuy = inputs.savings + inputs.currentEquity - downPayment - closingCosts - realtorFees;
+    const savingsAfterBuy = inputs.savings + currentEquity - downPayment - closingCosts - realtorFees;
     const loan = calculateLoan(inputs.newHomePrice - downPayment, inputs.newLoanRate, inputs.newLoanTerm);
     const monthlyPropertyTax = (inputs.newHomePrice * inputs.propertyTaxPercent) / 100 / 12;
     const totalPayment = loan.payment + monthlyPropertyTax + inputs.insurance;
+    const futureIncome = inputs.monthlyIncome * Math.pow(1 + inputs.incomeGrowthPercent / 100, 3);
+    const futureExpenses = inputs.monthlyExpenses * Math.pow(1 + inputs.inflationPercent / 100, 3);
     const dti = (inputs.monthlyDebt + totalPayment) / inputs.monthlyIncome;
     const futureSavings = savingsAfterBuy * Math.pow(1 + inputs.savingsInterestRate / 100, 3) + inputs.monthlySavingsBuy * 12 * 3 * Math.pow(1 + inputs.savingsInterestRate / 100, 1.5);
     const futureEquity = inputs.newHomePrice * Math.pow(1 + inputs.newHomeAppreciation / 100, 3) - calculateLoan(inputs.newHomePrice - downPayment, inputs.newLoanRate, inputs.newLoanTerm, 36).remainingBalance;
+    const monthlySavingsAfterExpenses = futureIncome - futureExpenses - totalPayment - inputs.monthlyDebt;
     return {
       loan,
       downPayment,
       savingsAfterBuy: savingsAfterBuy > 0 ? savingsAfterBuy : 0,
-      netWorth: inputs.currentEquity + inputs.savings,
+      netWorth: currentEquity + inputs.savings,
       totalPayment,
       dti,
       futureSavings,
       futureNetWorth: futureEquity + futureSavings,
+      monthlySavingsAfterExpenses,
       calculations: {
+        currentEquity: `Price ($${formatNumber(inputs.currentHomePrice)}) - Loan Balance ($${formatNumber(inputs.currentLoanBalance)}) = $${formatNumber(currentEquity)}`,
         downPayment: `${inputs.downPaymentPercent}% of $${formatNumber(inputs.newHomePrice)} = $${formatNumber(downPayment)}`,
         closingCosts: `${inputs.closingCostPercent}% of $${formatNumber(inputs.newHomePrice)} = $${formatNumber(closingCosts)}`,
         realtorFees: `${inputs.realtorFeePercent}% of $${formatNumber(inputs.currentHomePrice)} = $${formatNumber(realtorFees)}`,
-        savingsAfterBuy: `Savings ($${formatNumber(inputs.savings)}) + Equity ($${formatNumber(inputs.currentEquity)}) - Down Payment ($${formatNumber(downPayment)}) - Closing Costs ($${formatNumber(closingCosts)}) - Realtor Fees ($${formatNumber(realtorFees)}) = $${formatNumber(savingsAfterBuy)}`,
+        savingsAfterBuy: `Savings ($${formatNumber(inputs.savings)}) + Equity ($${formatNumber(currentEquity)}) - Down Payment ($${formatNumber(downPayment)}) - Closing Costs ($${formatNumber(closingCosts)}) - Realtor Fees ($${formatNumber(realtorFees)}) = $${formatNumber(savingsAfterBuy)}`,
         monthlyPropertyTax: `${inputs.propertyTaxPercent}% of $${formatNumber(inputs.newHomePrice)} / 12 = $${formatNumber(monthlyPropertyTax)}`,
         totalPayment: `Loan ($${formatNumber(loan.payment)}) + Tax ($${formatNumber(monthlyPropertyTax)}) + Insurance ($${formatNumber(inputs.insurance)}) = $${formatNumber(totalPayment)}`,
+        futureIncome: `$${formatNumber(inputs.monthlyIncome)} * (1 + ${inputs.incomeGrowthPercent / 100})^3 = $${formatNumber(futureIncome)}`,
+        futureExpenses: `$${formatNumber(inputs.monthlyExpenses)} * (1 + ${inputs.inflationPercent / 100})^3 = $${formatNumber(futureExpenses)}`,
         dti: `(Debt ($${formatNumber(inputs.monthlyDebt)}) + Payment ($${formatNumber(totalPayment)})) / Income ($${formatNumber(inputs.monthlyIncome)}) = ${(dti * 100).toFixed(2)}%`,
         futureSavings: `Initial ($${formatNumber(savingsAfterBuy)}) * (1 + ${inputs.savingsInterestRate / 100})^3 + Monthly ($${formatNumber(inputs.monthlySavingsBuy)} * 12 * 3) * (1 + ${inputs.savingsInterestRate / 100})^1.5 = $${formatNumber(futureSavings)}`,
         futureEquity: `Future Price ($${formatNumber(inputs.newHomePrice * Math.pow(1 + inputs.newHomeAppreciation / 100, 3))}) - Loan Balance ($${formatNumber(calculateLoan(inputs.newHomePrice - downPayment, inputs.newLoanRate, inputs.newLoanTerm, 36).remainingBalance)}) = $${formatNumber(futureEquity)}`,
+        monthlySavingsAfterExpenses: `Income ($${formatNumber(futureIncome)}) - Expenses ($${formatNumber(futureExpenses)}) - Payment ($${formatNumber(totalPayment)}) - Debt ($${formatNumber(inputs.monthlyDebt)}) = $${formatNumber(monthlySavingsAfterExpenses)}`,
       },
     };
   };
@@ -95,18 +106,33 @@ function App() {
     const futureCurrentHomePrice = inputs.currentHomePrice * Math.pow(1 + inputs.currentHomeAppreciation / 100, years);
     const futureEquity = futureCurrentHomePrice - currentLoan.remainingBalance;
     const futureNewHomePrice = inputs.newHomePrice * Math.pow(1 + inputs.newHomeAppreciation / 100, years);
-    const downPayment = futureNewHomePrice * (inputs.downPaymentPercent / 100);
+    const futureIncome = inputs.monthlyIncome * Math.pow(1 + inputs.incomeGrowthPercent / 100, years);
+    const futureExpenses = inputs.monthlyExpenses * Math.pow(1 + inputs.inflationPercent / 100, years);
     const closingCosts = futureNewHomePrice * (inputs.closingCostPercent / 100);
     const realtorFees = futureCurrentHomePrice * (inputs.realtorFeePercent / 100);
+    
+    // Calculate down payment to match buy-now monthly savings after expenses
+    const buyNowSavings = buyNow.monthlySavingsAfterExpenses;
+    const monthlyRate = inputs.newLoanRate / 100 / 12;
+    const n = inputs.newLoanTerm * 12;
+    const monthlyPropertyTax = (futureNewHomePrice * inputs.propertyTaxPercent) / 100 / 12;
+    const totalNonLoanPayment = monthlyPropertyTax + inputs.insurance + inputs.monthlyDebt;
+    const targetSavings = buyNowSavings;
+    const availableIncome = futureIncome - futureExpenses - totalNonLoanPayment;
+    const maxLoanPayment = availableIncome - targetSavings;
+    const loanAmount = maxLoanPayment * (Math.pow(1 + monthlyRate, n) - 1) / (monthlyRate * Math.pow(1 + monthlyRate, n));
+    const downPayment = futureNewHomePrice - loanAmount;
+    const downPaymentPercent = (downPayment / futureNewHomePrice) * 100;
     const savingsAfterBuy = futureSavings + futureEquity - downPayment - closingCosts - realtorFees;
     const loan = calculateLoan(futureNewHomePrice - downPayment, inputs.newLoanRate, inputs.newLoanTerm);
-    const monthlyPropertyTax = (futureNewHomePrice * inputs.propertyTaxPercent) / 100 / 12;
     const totalPayment = loan.payment + monthlyPropertyTax + inputs.insurance;
-    const dti = (inputs.monthlyDebt + totalPayment) / inputs.monthlyIncome;
+    const dti = (inputs.monthlyDebt + totalPayment) / futureIncome;
+
     return {
       year: years,
       loan,
       downPayment,
+      downPaymentPercent: downPaymentPercent > 0 ? downPaymentPercent : 0,
       savingsAfterBuy: savingsAfterBuy > 0 ? savingsAfterBuy : 0,
       netWorth: futureEquity + futureSavings,
       totalPayment,
@@ -116,13 +142,15 @@ function App() {
         futureCurrentHomePrice: `$${formatNumber(inputs.currentHomePrice)} * (1 + ${inputs.currentHomeAppreciation / 100})^${years} = $${formatNumber(futureCurrentHomePrice)}`,
         futureEquity: `Future Price ($${formatNumber(futureCurrentHomePrice)}) - Loan Balance ($${formatNumber(currentLoan.remainingBalance)}) = $${formatNumber(futureEquity)}`,
         futureNewHomePrice: `$${formatNumber(inputs.newHomePrice)} * (1 + ${inputs.newHomeAppreciation / 100})^${years} = $${formatNumber(futureNewHomePrice)}`,
-        downPayment: `${inputs.downPaymentPercent}% of $${formatNumber(futureNewHomePrice)} = $${formatNumber(downPayment)}`,
+        futureIncome: `$${formatNumber(inputs.monthlyIncome)} * (1 + ${inputs.incomeGrowthPercent / 100})^${years} = $${formatNumber(futureIncome)}`,
+        futureExpenses: `$${formatNumber(inputs.monthlyExpenses)} * (1 + ${inputs.inflationPercent / 100})^${years} = $${formatNumber(futureExpenses)}`,
+        downPayment: `Target Savings ($${formatNumber(targetSavings)}) requires Loan Payment ≤ $${formatNumber(maxLoanPayment)}; Loan Amount = $${formatNumber(loanAmount)}; Down Payment = $${formatNumber(futureNewHomePrice)} - $${formatNumber(loanAmount)} = $${formatNumber(downPayment)} (${downPaymentPercent.toFixed(2)}%)`,
         closingCosts: `${inputs.closingCostPercent}% of $${formatNumber(futureNewHomePrice)} = $${formatNumber(closingCosts)}`,
         realtorFees: `${inputs.realtorFeePercent}% of $${formatNumber(futureCurrentHomePrice)} = $${formatNumber(realtorFees)}`,
         savingsAfterBuy: `Savings ($${formatNumber(futureSavings)}) + Equity ($${formatNumber(futureEquity)}) - Down Payment ($${formatNumber(downPayment)}) - Closing Costs ($${formatNumber(closingCosts)}) - Realtor Fees ($${formatNumber(realtorFees)}) = $${formatNumber(savingsAfterBuy)}`,
         monthlyPropertyTax: `${inputs.propertyTaxPercent}% of $${formatNumber(futureNewHomePrice)} / 12 = $${formatNumber(monthlyPropertyTax)}`,
         totalPayment: `Loan ($${formatNumber(loan.payment)}) + Tax ($${formatNumber(monthlyPropertyTax)}) + Insurance ($${formatNumber(inputs.insurance)}) = $${formatNumber(totalPayment)}`,
-        dti: `(Debt ($${formatNumber(inputs.monthlyDebt)}) + Payment ($${formatNumber(totalPayment)})) / Income ($${formatNumber(inputs.monthlyIncome)}) = ${(dti * 100).toFixed(2)}%`,
+        dti: `(Debt ($${formatNumber(inputs.monthlyDebt)}) + Payment ($${formatNumber(totalPayment)})) / Income ($${formatNumber(futureIncome)}) = ${(dti * 100).toFixed(2)}%`,
       },
     };
   };
@@ -160,10 +188,6 @@ function App() {
           <div>
             <label className="block">Appreciation Rate (%):</label>
             <input type="number" name="currentHomeAppreciation" value={inputs.currentHomeAppreciation} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
-          </div>
-          <div>
-            <label className="block">Equity ($):</label>
-            <input type="number" name="currentEquity" value={inputs.currentEquity} onChange={handleInputChange} className="border p-2 w-full" />
           </div>
           <div>
             <label className="block">Realtor Fee (%):</label>
@@ -228,6 +252,18 @@ function App() {
             <input type="number" name="monthlyIncome" value={inputs.monthlyIncome} onChange={handleInputChange} className="border p-2 w-full" />
           </div>
           <div>
+            <label className="block">Income Growth (%):</label>
+            <input type="number" name="incomeGrowthPercent" value={inputs.incomeGrowthPercent} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
+          </div>
+          <div>
+            <label className="block">Monthly Expenses ($):</label>
+            <input type="number" name="monthlyExpenses" value={inputs.monthlyExpenses} onChange={handleInputChange} className="border p-2 w-full" />
+          </div>
+          <div>
+            <label className="block">Inflation Rate (%):</label>
+            <input type="number" name="inflationPercent" value={inputs.inflationPercent} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
+          </div>
+          <div>
             <label className="block">Monthly Debt ($):</label>
             <input type="number" name="monthlyDebt" value={inputs.monthlyDebt} onChange={handleInputChange} className="border p-2 w-full" />
           </div>
@@ -250,14 +286,18 @@ function App() {
             <td className="border p-2">
               Buy Now
               <div className="text-sm">
+                <p>{buyNow.calculations.currentEquity}</p>
                 <p>{buyNow.calculations.downPayment}</p>
                 <p>{buyNow.calculations.closingCosts}</p>
                 <p>{buyNow.calculations.realtorFees}</p>
                 <p>{buyNow.calculations.savingsAfterBuy}</p>
                 <p>{buyNow.calculations.monthlyPropertyTax}</p>
                 <p>{buyNow.calculations.totalPayment}</p>
+                <p>{buyNow.calculations.futureIncome}</p>
+                <p>{buyNow.calculations.futureExpenses}</p>
                 <p>{buyNow.calculations.futureSavings}</p>
                 <p>{buyNow.calculations.futureEquity}</p>
+                <p>{buyNow.calculations.monthlySavingsAfterExpenses}</p>
                 <p>{buyNow.calculations.dti}</p>
               </div>
             </td>
@@ -276,6 +316,8 @@ function App() {
                   <p>{s.calculations.futureEquity}</p>
                   <p>{s.calculations.futureNewHomePrice}</p>
                   <p>{s.calculations.futureSavings}</p>
+                  <p>{s.calculations.futureIncome}</p>
+                  <p>{s.calculations.futureExpenses}</p>
                   <p>{s.calculations.downPayment}</p>
                   <p>{s.calculations.closingCosts}</p>
                   <p>{s.calculations.realtorFees}</p>
@@ -286,7 +328,7 @@ function App() {
                 </div>
               </td>
               <td className="border p-2">${formatNumber(s.totalPayment)}</td>
-              <td className="border p-2">${formatNumber(s.downPayment)}</td>
+              <td className="border p-2">${formatNumber(s.downPayment)} ({s.downPaymentPercent.toFixed(2)}%)</td>
               <td className="border p-2">${formatNumber(s.savingsAfterBuy)}</td>
               <td className="border p-2">${formatNumber(s.netWorth)}</td>
               <td className="border p-2">{(s.dti * 100).toFixed(2)}%</td>
