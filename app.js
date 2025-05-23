@@ -285,6 +285,7 @@ function App() {
           <tr className="bg-gray-200">
             <th className="border p-2">Scenario</th>
             <th className="border p-2">Total Monthly Payment</th>
+            <th className="border p-2">Monthly Savings</th>
             <th className="border p-2">Down Payment</th>
             <th className="border p-2">Savings After Buy</th>
             <th className="border p-2">Net Worth</th>
@@ -312,6 +313,7 @@ function App() {
               </div>
             </td>
             <td className="border p-2">${formatNumber(buyNow.totalPayment)}</td>
+            <td className="border p-2">${formatNumber(buyNow.monthlySavingsAfterExpenses)}</td>
             <td className="border p-2">${formatNumber(buyNow.downPayment)}</td>
             <td className="border p-2">${formatNumber(buyNow.savingsAfterBuy)}</td>
             <td className="border p-2">${formatNumber(buyNow.futureNetWorth)}</td>
@@ -340,6 +342,7 @@ function App() {
                 </div>
               </td>
               <td className="border p-2">${formatNumber(s.totalPayment)}</td>
+              <td className="border p-2">${formatNumber(s.monthlySavingsAfterExpenses)}</td>
               <td className="border p-2">${formatNumber(s.downPayment)} ({s.downPaymentPercent.toFixed(2)}%)</td>
               <td className="border p-2">${formatNumber(s.savingsAfterBuy)}</td>
               <td className="border p-2">${formatNumber(s.netWorth)}</td>
@@ -348,29 +351,34 @@ function App() {
           ))}
         </tbody>
       </table>
-      <h2 className="text-xl font-semibold mt-4">Amortization Schedule (Buy Now)</h2>
-      <table className="w-full border-collapse border mt-2">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="border p-2">Month</th>
-            <th className="border p-2">Payment ($)</th>
-            <th className="border p-2">Principal ($)</th>
-            <th className="border p-2">Interest ($)</th>
-            <th className="border p-2">Balance ($)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {buyNow.loan.schedule.slice(0, 12).map((month) => (
-            <tr key={month.month}>
-              <td className="border p-2">{month.month}</td>
-              <td className="border p-2">${formatNumber(month.payment)}</td>
-              <td className="border p-2">${formatNumber(month.principal)}</td>
-              <td className="border p-2">${formatNumber(month.interest)}</td>
-              <td className="border p-2">${formatNumber(month.balance)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <h2 className="text-xl font-semibold mt-4">Should You Buy Now or Wait?</h2>
+      <div className="mt-2">
+        <p className="mb-2"><strong>Buy Now:</strong></p>
+        <ul className="list-disc pl-5 mb-4">
+          <li>Monthly Payment: ${formatNumber(buyNow.totalPayment)}</li>
+          <li>Monthly Savings: ${formatNumber(buyNow.monthlySavingsAfterExpenses)}</li>
+          <li>Down Payment: ${formatNumber(buyNow.downPayment)}</li>
+          <li>Savings After Buy: ${formatNumber(buyNow.savingsAfterBuy)}</li>
+          <li>Net Worth (Year 3): ${formatNumber(buyNow.futureNetWorth)}</li>
+        </ul>
+        {stay.map((s) => (
+          <div key={s.year}>
+            <p className="mb-2"><strong>Wait {s.year} Year{s.year > 1 ? 's' : ''}:</strong></p>
+            <ul className="list-disc pl-5 mb-4">
+              <li>Monthly Payment: ${formatNumber(s.totalPayment)}</li>
+              <li>Monthly Savings: ${formatNumber(s.monthlySavingsAfterExpenses)}</li>
+              <li>Down Payment: ${formatNumber(s.downPayment)}</li>
+              <li>Required Down Payment for ${formatNumber(inputs.monthlySavingsBuy)} Savings: ${formatNumber(s.calculations.requiredDownPayment.split(' = ')[1].split(' (')[0].replace('$', '').replace(/,/g, ''))}</li>
+              <li>Savings After Buy: ${formatNumber(s.savingsAfterBuy)}</li>
+              <li>Net Worth (Year 3): ${formatNumber(s.netWorth)}</li>
+            </ul>
+          </div>
+        ))}
+        <p className="font-semibold">Key Considerations:</p>
+        <p>Buying now locks in a home price of ${formatNumber(inputs.newHomePrice)} but requires a ${formatNumber(buyNow.downPayment)} down payment and a high monthly payment of ${formatNumber(buyNow.totalPayment)}, leaving ${formatNumber(buyNow.monthlySavingsAfterExpenses)} in monthly savings. Your net worth in 3 years is projected at ${formatNumber(buyNow.futureNetWorth)}.</p>
+        <p>Waiting allows you to save ${formatNumber(inputs.monthlySavingsStay)} monthly, growing your savings to ${formatNumber(stay[2].calculations.futureSavings.split(' = ')[1].replace('$', '').replace(/,/g, ''))} by year 3. However, the home price rises to ${formatNumber(stay[2].calculations.futureNewHomePrice.split(' = ')[1].replace('$', '').replace(/,/g, ''))}, and you may need a larger down payment (up to ${formatNumber(stay[2].calculations.requiredDownPayment.split(' = ')[1].split(' (')[0].replace('$', '').replace(/,/g, ''))}) to maintain ${formatNumber(inputs.monthlySavingsBuy)} monthly savings. Savings after buy may be negative (e.g., ${formatNumber(stay[2].savingsAfterBuy)} in year 3), indicating insufficient funds.</p>
+        <p><strong>Recommendation:</strong> Buy now if you can afford the high payments and want to start building equity sooner. Wait if you need more savings to cover future costs or prefer lower monthly payments now.</p>
+      </div>
     </div>
   );
 }
