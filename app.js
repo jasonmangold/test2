@@ -111,13 +111,12 @@ function App() {
     const closingCosts = futureNewHomePrice * (inputs.closingCostPercent / 100);
     const realtorFees = futureCurrentHomePrice * (inputs.realtorFeePercent / 100);
     
-    // Calculate down payment to match buy-now monthly savings after expenses
-    const buyNowSavings = buyNow.monthlySavingsAfterExpenses;
+    // Calculate down payment to match buy-now monthly savings
+    const targetSavings = inputs.monthlySavingsBuy;
     const monthlyRate = inputs.newLoanRate / 100 / 12;
     const n = inputs.newLoanTerm * 12;
     const monthlyPropertyTax = (futureNewHomePrice * inputs.propertyTaxPercent) / 100 / 12;
     const totalNonLoanPayment = monthlyPropertyTax + inputs.insurance + inputs.monthlyDebt;
-    const targetSavings = buyNowSavings;
     const availableIncome = futureIncome - futureExpenses - totalNonLoanPayment;
     const maxLoanPayment = availableIncome - targetSavings;
     const loanAmount = maxLoanPayment * (Math.pow(1 + monthlyRate, n) - 1) / (monthlyRate * Math.pow(1 + monthlyRate, n));
@@ -127,6 +126,7 @@ function App() {
     const loan = calculateLoan(futureNewHomePrice - downPayment, inputs.newLoanRate, inputs.newLoanTerm);
     const totalPayment = loan.payment + monthlyPropertyTax + inputs.insurance;
     const dti = (inputs.monthlyDebt + totalPayment) / futureIncome;
+    const monthlySavingsAfterExpenses = futureIncome - futureExpenses - totalPayment - inputs.monthlyDebt;
 
     return {
       year: years,
@@ -137,6 +137,7 @@ function App() {
       netWorth: futureEquity + futureSavings,
       totalPayment,
       dti,
+      monthlySavingsAfterExpenses,
       calculations: {
         futureSavings: `Initial ($${formatNumber(inputs.savings)}) * (1 + ${inputs.savingsInterestRate / 100})^${years} + Monthly ($${formatNumber(inputs.monthlySavingsStay)} * 12 * ${years}) * (1 + ${inputs.savingsInterestRate / 100})^${years}/2 = $${formatNumber(futureSavings)}`,
         futureCurrentHomePrice: `$${formatNumber(inputs.currentHomePrice)} * (1 + ${inputs.currentHomeAppreciation / 100})^${years} = $${formatNumber(futureCurrentHomePrice)}`,
@@ -150,6 +151,7 @@ function App() {
         savingsAfterBuy: `Savings ($${formatNumber(futureSavings)}) + Equity ($${formatNumber(futureEquity)}) - Down Payment ($${formatNumber(downPayment)}) - Closing Costs ($${formatNumber(closingCosts)}) - Realtor Fees ($${formatNumber(realtorFees)}) = $${formatNumber(savingsAfterBuy)}`,
         monthlyPropertyTax: `${inputs.propertyTaxPercent}% of $${formatNumber(futureNewHomePrice)} / 12 = $${formatNumber(monthlyPropertyTax)}`,
         totalPayment: `Loan ($${formatNumber(loan.payment)}) + Tax ($${formatNumber(monthlyPropertyTax)}) + Insurance ($${formatNumber(inputs.insurance)}) = $${formatNumber(totalPayment)}`,
+        monthlySavingsAfterExpenses: `Income ($${formatNumber(futureIncome)}) - Expenses ($${formatNumber(futureExpenses)}) - Payment ($${formatNumber(totalPayment)}) - Debt ($${formatNumber(inputs.monthlyDebt)}) = $${formatNumber(monthlySavingsAfterExpenses)}`,
         dti: `(Debt ($${formatNumber(inputs.monthlyDebt)}) + Payment ($${formatNumber(totalPayment)})) / Income ($${formatNumber(futureIncome)}) = ${(dti * 100).toFixed(2)}%`,
       },
     };
@@ -295,9 +297,9 @@ function App() {
                 <p>{buyNow.calculations.totalPayment}</p>
                 <p>{buyNow.calculations.futureIncome}</p>
                 <p>{buyNow.calculations.futureExpenses}</p>
+                <p>{buyNow.calculations.monthlySavingsAfterExpenses}</p>
                 <p>{buyNow.calculations.futureSavings}</p>
                 <p>{buyNow.calculations.futureEquity}</p>
-                <p>{buyNow.calculations.monthlySavingsAfterExpenses}</p>
                 <p>{buyNow.calculations.dti}</p>
               </div>
             </td>
@@ -324,6 +326,7 @@ function App() {
                   <p>{s.calculations.savingsAfterBuy}</p>
                   <p>{s.calculations.monthlyPropertyTax}</p>
                   <p>{s.calculations.totalPayment}</p>
+                  <p>{s.calculations.monthlySavingsAfterExpenses}</p>
                   <p>{s.calculations.dti}</p>
                 </div>
               </td>
