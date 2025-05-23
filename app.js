@@ -73,7 +73,7 @@ function App() {
     return {
       loan,
       downPayment,
-      savingsAfterBuy: savingsAfterBuy > 0 ? savingsAfterBuy : 0,
+      savingsAfterBuy,
       netWorth: currentEquity + inputs.savings,
       totalPayment,
       dti,
@@ -118,7 +118,12 @@ function App() {
     const monthlyPropertyTax = (futureNewHomePrice * inputs.propertyTaxPercent) / 100 / 12;
     const totalPaymentAllowed = futureIncome - futureExpenses - targetSavings - inputs.monthlyDebt;
     const loanPayment = totalPaymentAllowed - monthlyPropertyTax - inputs.insurance;
-    const loanAmount = loanPayment <= 0 ? 0 : loanPayment * (Math.pow(1 + monthlyRate, n) - 1) / (monthlyRate * Math.pow(1 + monthlyRate, n));
+    let loanAmount = 0;
+    if (loanPayment > 0) {
+      loanAmount = loanPayment * (Math.pow(1 + monthlyRate, n) - 1) / (monthlyRate * Math.pow(1 + monthlyRate, n));
+    }
+    // Ensure loanAmount does not exceed futureNewHomePrice
+    loanAmount = Math.min(loanAmount, futureNewHomePrice);
     const downPayment = futureNewHomePrice - loanAmount;
     const downPaymentPercent = (downPayment / futureNewHomePrice) * 100;
     const savingsAfterBuy = futureSavings + futureEquity - downPayment - closingCosts - realtorFees;
@@ -131,8 +136,8 @@ function App() {
       year: years,
       loan,
       downPayment,
-      downPaymentPercent: downPaymentPercent > 0 ? downPaymentPercent : 0,
-      savingsAfterBuy: savingsAfterBuy > 0 ? savingsAfterBuy : 0,
+      downPaymentPercent,
+      savingsAfterBuy,
       netWorth: futureEquity + futureSavings,
       totalPayment,
       dti,
@@ -304,7 +309,7 @@ function App() {
             </td>
             <td className="border p-2">${formatNumber(buyNow.totalPayment)}</td>
             <td className="border p-2">${formatNumber(buyNow.downPayment)}</td>
-            <td className="border p-2">${formatNumber(buyNow.futureSavings)}</td>
+            <td className="border p-2">${formatNumber(buyNow.savingsAfterBuy)}</td>
             <td className="border p-2">${formatNumber(buyNow.futureNetWorth)}</td>
             <td className="border p-2">{(buyNow.dti * 100).toFixed(2)}%</td>
           </tr>
