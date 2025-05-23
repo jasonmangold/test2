@@ -55,6 +55,12 @@ function App() {
       netWorth: inputs.currentEquity + inputs.savings,
       totalPayment,
       dti,
+      calculations: {
+        downPayment: `${inputs.downPaymentPercent}% of $${inputs.newHomePrice.toFixed(2)} = $${downPayment.toFixed(2)}`,
+        monthlyPropertyTax: `${inputs.propertyTaxPercent}% of $${inputs.newHomePrice.toFixed(2)} / 12 = $${monthlyPropertyTax.toFixed(2)}`,
+        totalPayment: `Loan ($${loan.payment.toFixed(2)}) + Tax ($${monthlyPropertyTax.toFixed(2)}) + Insurance ($${inputs.insurance.toFixed(2)}) = $${totalPayment.toFixed(2)}`,
+        dti: `(Debt ($${inputs.monthlyDebt.toFixed(2)}) + Payment ($${totalPayment.toFixed(2)})) / Income ($${inputs.monthlyIncome.toFixed(2)}) = ${(dti * 100).toFixed(2)}%`,
+      },
     };
   };
 
@@ -79,6 +85,16 @@ function App() {
       netWorth: futureEquity + futureSavings,
       totalPayment,
       dti,
+      calculations: {
+        futureSavings: `Initial ($${inputs.savings.toFixed(2)}) * (1 + ${inputs.savingsInterestRate / 100})^${years} + Monthly ($${inputs.monthlySavings.toFixed(2)} * 12 * ${years}) * (1 + ${inputs.savingsInterestRate / 100})^(${years}/2) = $${futureSavings.toFixed(2)}`,
+        futureCurrentHomePrice: `$${inputs.currentHomePrice.toFixed(2)} * (1 + ${inputs.currentHomeAppreciation / 100})^${years} = $${futureCurrentHomePrice.toFixed(2)}`,
+        futureEquity: `Future Price ($${futureCurrentHomePrice.toFixed(2)}) - Loan Balance ($${currentLoan.remainingBalance.toFixed(2)}) = $${futureEquity.toFixed(2)}`,
+        futureNewHomePrice: `$${inputs.newHomePrice.toFixed(2)} * (1 + ${inputs.newHomeAppreciation / 100})^${years} = $${futureNewHomePrice.toFixed(2)}`,
+        downPayment: `${inputs.downPaymentPercent}% of $${futureNewHomePrice.toFixed(2)} = $${downPayment.toFixed(2)}`,
+        monthlyPropertyTax: `${inputs.propertyTaxPercent}% of $${futureNewHomePrice.toFixed(2)} / 12 = $${monthlyPropertyTax.toFixed(2)}`,
+        totalPayment: `Loan ($${loan.payment.toFixed(2)}) + Tax ($${monthlyPropertyTax.toFixed(2)}) + Insurance ($${inputs.insurance.toFixed(2)}) = $${totalPayment.toFixed(2)}`,
+        dti: `(Debt ($${inputs.monthlyDebt.toFixed(2)}) + Payment ($${totalPayment.toFixed(2)})) / Income ($${inputs.monthlyIncome.toFixed(2)}) = ${(dti * 100).toFixed(2)}%`,
+      },
     };
   };
 
@@ -88,113 +104,112 @@ function App() {
   return (
     <div className="max-w-4xl mx-auto bg-white p-6 rounded shadow">
       <h1 className="text-2xl font-bold mb-4">Home Purchase Comparison</h1>
+      <h2 className="text-lg font-semibold mb-2">Input Parameters</h2>
       <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <label className="block">Current Home Price ($):</label>
-          <input type="number" name="currentHomePrice" value={inputs.currentHomePrice} onChange={handleInputChange} className="border p-2 w-full" />
+        <div className="border p-4 rounded">
+          <h3 className="font-semibold mb-2">Current Home</h3>
+          <div>
+            <label className="block">Price ($):</label>
+            <input type="number" name="currentHomePrice" value={inputs.currentHomePrice} onChange={handleInputChange} className="border p-2 w-full" />
+          </div>
+          <div>
+            <label className="block">Loan Balance ($):</label>
+            <input type="number" name="currentLoanBalance" value={inputs.currentLoanBalance} onChange={handleInputChange} className="border p-2 w-full" />
+          </div>
+          <div>
+            <label className="block">Loan Rate (%):</label>
+            <input type="number" name="currentLoanRate" value={inputs.currentLoanRate} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
+          </div>
+          <div>
+            <label className="block">Loan Term (Years):</label>
+            <input type="number" name="currentLoanTerm" value={inputs.currentLoanTerm} onChange={handleInputChange} className="border p-2 w-full" />
+          </div>
+          <div>
+            <label className="block">Appreciation Rate (%):</label>
+            <input type="number" name="currentHomeAppreciation" value={inputs.currentHomeAppreciation} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
+          </div>
+          <div>
+            <label className="block">Equity ($):</label>
+            <input type="number" name="currentEquity" value={inputs.currentEquity} onChange={handleInputChange} className="border p-2 w-full" />
+          </div>
         </div>
-        <div>
-          <label className="block">Current Loan Balance ($):</label>
-          <input type="number" name="currentLoanBalance" value={inputs.currentLoanBalance} onChange={handleInputChange} className="border p-2 w-full" />
+        <div className="border p-4 rounded">
+          <h3 className="font-semibold mb-2">New Home</h3>
+          <div>
+            <label className="block">Price ($):</label>
+            <input type="number" name="newHomePrice" value={inputs.newHomePrice} onChange={handleInputChange} className="border p-2 w-full" />
+          </div>
+          <div>
+            <label className="block">Appreciation Rate (%):</label>
+            <input type="number" name="newHomeAppreciation" value={inputs.newHomeAppreciation} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
+          </div>
+          <div>
+            <label className="block">Loan Rate (%):</label>
+            <input type="number" name="newLoanRate" value={inputs.newLoanRate} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
+          </div>
+          <div>
+            <label className="block">Loan Term (Years):</label>
+            <input type="number" name="newLoanTerm" value={inputs.newLoanTerm} onChange={handleInputChange} className="border p-2 w-full" />
+          </div>
+          <div>
+            <label className="block">Down Payment (%):</label>
+            <input type="number" name="downPaymentPercent" value={inputs.downPaymentPercent} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
+          </div>
+          <div>
+            <label className="block">Property Tax (%):</label>
+            <input type="number" name="propertyTaxPercent" value={inputs.propertyTaxPercent} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
+          </div>
+          <div>
+            <label className="block">Monthly Insurance ($):</label>
+            <input type="number" name="insurance" value={inputs.insurance} onChange={handleInputChange} className="border p-2 w-full" />
+          </div>
         </div>
-        <div>
-          <label className="block">Current Loan Rate (%):</label>
-          <input type="number" name="currentLoanRate" value={inputs.currentLoanRate} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
-        </div>
-        <div>
-          <label className="block">Current Loan Term (Years):</label>
-          <input type="number" name="currentLoanTerm" value={inputs.currentLoanTerm} onChange={handleInputChange} className="border p-2 w-full" />
-        </div>
-        <div>
-          <label className="block">Current Home Appreciation (%):</label>
-          <input type="number" name="currentHomeAppreciation" value={inputs.currentHomeAppreciation} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
-        </div>
-        <div>
-          <label className="block">New Home Price ($):</label>
-          <input type="number" name="newHomePrice" value={inputs.newHomePrice} onChange={handleInputChange} className="border p-2 w-full" />
-        </div>
-        <div>
-          <label className="block">New Home Appreciation (%):</label>
-          <input type="number" name="newHomeAppreciation" value={inputs.newHomeAppreciation} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
-        </div>
-        <div>
-          <label className="block">Current Equity ($):</label>
-          <input type="number" name="currentEquity" value={inputs.currentEquity} onChange={handleInputChange} className="border p-2 w-full" />
-        </div>
-        <div>
-          <label className="block">Savings ($):</label>
-          <input type="number" name="savings" value={inputs.savings} onChange={handleInputChange} className="border p-2 w-full" />
-        </div>
-        <div>
-          <label className="block">Monthly Savings ($):</label>
-          <input type="number" name="monthlySavings" value={inputs.monthlySavings} onChange={handleInputChange} className="border p-2 w-full" />
-        </div>
-        <div>
-          <label className="block">Savings Interest Rate (%):</label>
-          <input type="number" name="savingsInterestRate" value={inputs.savingsInterestRate} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
-        </div>
-        <div>
-          <label className="block">Monthly Income ($):</label>
-          <input type="number" name="monthlyIncome" value={inputs.monthlyIncome} onChange={handleInputChange} className="border p-2 w-full" />
-        </div>
-        <div>
-          <label className="block">Monthly Debt ($):</label>
-          <input type="number" name="monthlyDebt" value={inputs.monthlyDebt} onChange={handleInputChange} className="border p-2 w-full" />
-        </div>
-        <div>
-          <label className="block">New Loan Rate (%):</label>
-          <input type="number" name="newLoanRate" value={inputs.newLoanRate} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
-        </div>
-        <div>
-          <label className="block">New Loan Term (Years):</label>
-          <input type="number" name="newLoanTerm" value={inputs.newLoanTerm} onChange={handleInputChange} className="border p-2 w-full" />
-        </div>
-        <div>
-          <label className="block">Down Payment (%):</label>
-          <input type="number" name="downPaymentPercent" value={inputs.downPaymentPercent} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
-        </div>
-        <div>
-          <label className="block">Property Tax (%):</label>
-          <input type="number" name="propertyTaxPercent" value={inputs.propertyTaxPercent} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
-        </div>
-        <div>
-          <label className="block">Monthly Insurance ($):</label>
-          <input type="number" name="insurance" value={inputs.insurance} onChange={handleInputChange} className="border p-2 w-full" />
+        <div className="border p-4 rounded">
+          <h3 className="font-semibold mb-2">Finances</h3>
+          <div>
+            <label className="block">Savings ($):</label>
+            <input type="number" name="savings" value={inputs.savings} onChange={handleInputChange} className="border p-2 w-full" />
+          </div>
+          <div>
+            <label className="block">Monthly Savings ($):</label>
+            <input type="number" name="monthlySavings" value={inputs.monthlySavings} onChange={handleInputChange} className="border p-2 w-full" />
+          </div>
+          <div>
+            <label className="block">Savings Interest Rate (%):</label>
+            <input type="number" name="savingsInterestRate" value={inputs.savingsInterestRate} onChange={handleInputChange} className="border p-2 w-full" step="0.1" />
+          </div>
+          <div>
+            <label className="block">Monthly Income ($):</label>
+            <input type="number" name="monthlyIncome" value={inputs.monthlyIncome} onChange={handleInputChange} className="border p-2 w-full" />
+          </div>
+          <div>
+            <label className="block">Monthly Debt ($):</label>
+            <input type="number" name="monthlyDebt" value={inputs.monthlyDebt} onChange={handleInputChange} className="border p-2 w-full" />
+          </div>
         </div>
       </div>
-      <h2 className="text-xl font-semibold">Results</h2>
-      <table className="w-full border-collapse border mt-4">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="border p-2">Scenario</th>
-            <th className="border p-2">Total Monthly Payment ($)</th>
-            <th className="border p-2">Down Payment ($)</th>
-            <th className="border p-2">Savings After Buy ($)</th>
-            <th className="border p-2">Net Worth ($)</th>
-            <th className="border p-2">Debt-to-Income Ratio (%)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td className="border p-2">Buy Now</td>
-            <td className="border p-2">{buyNow.totalPayment.toFixed(2)}</td>
-            <td className="border p-2">{buyNow.downPayment.toFixed(2)}</td>
-            <td className="border p-2">{buyNow.savingsAfterBuy.toFixed(2)}</td>
-            <td className="border p-2">{buyNow.netWorth.toFixed(2)}</td>
-            <td className="border p-2">{(buyNow.dti * 100).toFixed(2)}</td>
-          </tr>
-          {stay.map((s) => (
-            <tr key={s.year}>
-              <td className="border p-2">Stay {s.year} Year{s.year > 1 ? 's' : ''}</td>
-              <td className="border p-2">{s.totalPayment.toFixed(2)}</td>
-              <td className="border p-2">{s.downPayment.toFixed(2)}</td>
-              <td className="border p-2">{s.savingsAfterBuy.toFixed(2)}</td>
-              <td className="border p-2">{s.netWorth.toFixed(2)}</td>
-              <td className="border p-2">{(s.dti * 100).toFixed(2)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <h2 className="text-xl font-semibold mb-2">Results</h2>
+      <div className="mb-4">
+        <h3 className="font-semibold">Buy Now</h3>
+        <p>Total Monthly Payment: ${buyNow.totalPayment.toFixed(2)} ({buyNow.calculations.totalPayment})</p>
+        <p>Down Payment: ${buyNow.downPayment.toFixed(2)} ({buyNow.calculations.downPayment})</p>
+        <p>Savings After Buy: ${buyNow.savingsAfterBuy.toFixed(2)}</p>
+        <p>Net Worth: ${buyNow.netWorth.toFixed(2)} (Equity + Savings)</p>
+        <p>Debt-to-Income Ratio: {(buyNow.dti * 100).toFixed(2)}% ({buyNow.calculations.dti})</p>
+      </div>
+      {stay.map((s) => (
+        <div key={s.year} className="mb-4">
+          <h3 className="font-semibold">Stay {s.year} Year{s.year > 1 ? 's' : ''}</h3>
+          <p>Future Current Home Price: ${s.calculations.futureCurrentHomePrice}</p>
+          <p>Future Equity: ${s.calculations.futureEquity}</p>
+          <p>Future New Home Price: ${s.calculations.futureNewHomePrice}</p>
+          <p>Future Savings: ${s.savingsAfterBuy.toFixed(2)} ({s.calculations.futureSavings})</p>
+          <p>Total Monthly Payment: ${s.totalPayment.toFixed(2)} ({s.calculations.totalPayment})</p>
+          <p>Down Payment: ${s.downPayment.toFixed(2)} ({s.calculations.downPayment})</p>
+          <p>Net Worth: ${s.netWorth.toFixed(2)} (Future Equity + Future Savings)</p>
+          <p>Debt-to-Income Ratio: {(s.dti * 100).toFixed(2)}% ({s.calculations.dti})</p>
+        </div>
+      ))}
       <h2 className="text-xl font-semibold mt-4">Amortization Schedule (Buy Now)</h2>
       <table className="w-full border-collapse border mt-2">
         <thead>
