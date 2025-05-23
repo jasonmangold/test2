@@ -111,15 +111,14 @@ function App() {
     const closingCosts = futureNewHomePrice * (inputs.closingCostPercent / 100);
     const realtorFees = futureCurrentHomePrice * (inputs.realtorFeePercent / 100);
     
-    // Calculate down payment to match buy-now monthly savings
+    // Calculate down payment to achieve target savings after all costs
     const targetSavings = inputs.monthlySavingsBuy;
     const monthlyRate = inputs.newLoanRate / 100 / 12;
     const n = inputs.newLoanTerm * 12;
     const monthlyPropertyTax = (futureNewHomePrice * inputs.propertyTaxPercent) / 100 / 12;
-    const totalNonLoanPayment = monthlyPropertyTax + inputs.insurance + inputs.monthlyDebt;
-    const availableIncome = futureIncome - futureExpenses - totalNonLoanPayment;
-    const maxLoanPayment = availableIncome - targetSavings;
-    const loanAmount = maxLoanPayment * (Math.pow(1 + monthlyRate, n) - 1) / (monthlyRate * Math.pow(1 + monthlyRate, n));
+    const totalPaymentAllowed = futureIncome - futureExpenses - targetSavings - inputs.monthlyDebt;
+    const loanPayment = totalPaymentAllowed - monthlyPropertyTax - inputs.insurance;
+    const loanAmount = loanPayment <= 0 ? 0 : loanPayment * (Math.pow(1 + monthlyRate, n) - 1) / (monthlyRate * Math.pow(1 + monthlyRate, n));
     const downPayment = futureNewHomePrice - loanAmount;
     const downPaymentPercent = (downPayment / futureNewHomePrice) * 100;
     const savingsAfterBuy = futureSavings + futureEquity - downPayment - closingCosts - realtorFees;
@@ -145,7 +144,7 @@ function App() {
         futureNewHomePrice: `$${formatNumber(inputs.newHomePrice)} * (1 + ${inputs.newHomeAppreciation / 100})^${years} = $${formatNumber(futureNewHomePrice)}`,
         futureIncome: `$${formatNumber(inputs.monthlyIncome)} * (1 + ${inputs.incomeGrowthPercent / 100})^${years} = $${formatNumber(futureIncome)}`,
         futureExpenses: `$${formatNumber(inputs.monthlyExpenses)} * (1 + ${inputs.inflationPercent / 100})^${years} = $${formatNumber(futureExpenses)}`,
-        downPayment: `Target Savings ($${formatNumber(targetSavings)}) requires Loan Payment ≤ $${formatNumber(maxLoanPayment)}; Loan Amount = $${formatNumber(loanAmount)}; Down Payment = $${formatNumber(futureNewHomePrice)} - $${formatNumber(loanAmount)} = $${formatNumber(downPayment)} (${downPaymentPercent.toFixed(2)}%)`,
+        downPayment: `Target Savings ($${formatNumber(targetSavings)}) allows Total Payment ≤ $${formatNumber(totalPaymentAllowed)}; Loan Payment = $${formatNumber(loanPayment)}; Loan Amount = $${formatNumber(loanAmount)}; Down Payment = $${formatNumber(futureNewHomePrice)} - $${formatNumber(loanAmount)} = $${formatNumber(downPayment)} (${downPaymentPercent.toFixed(2)}%)`,
         closingCosts: `${inputs.closingCostPercent}% of $${formatNumber(futureNewHomePrice)} = $${formatNumber(closingCosts)}`,
         realtorFees: `${inputs.realtorFeePercent}% of $${formatNumber(futureCurrentHomePrice)} = $${formatNumber(realtorFees)}`,
         savingsAfterBuy: `Savings ($${formatNumber(futureSavings)}) + Equity ($${formatNumber(futureEquity)}) - Down Payment ($${formatNumber(downPayment)}) - Closing Costs ($${formatNumber(closingCosts)}) - Realtor Fees ($${formatNumber(realtorFees)}) = $${formatNumber(savingsAfterBuy)}`,
