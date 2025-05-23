@@ -66,10 +66,10 @@ function App() {
     const totalPayment = loan.payment + monthlyPropertyTax + inputs.insurance;
     const futureIncome = inputs.monthlyIncome * Math.pow(1 + inputs.incomeGrowthPercent / 100, 3);
     const futureExpenses = inputs.monthlyExpenses * Math.pow(1 + inputs.inflationPercent / 100, 3);
+    const monthlySavingsAfterExpenses = inputs.monthlyIncome - inputs.monthlyExpenses - totalPayment - inputs.monthlyDebt;
     const dti = (inputs.monthlyDebt + totalPayment) / inputs.monthlyIncome;
     const futureSavings = savingsAfterBuy * Math.pow(1 + inputs.savingsInterestRate / 100, 3) + inputs.monthlySavingsBuy * 12 * 3 * Math.pow(1 + inputs.savingsInterestRate / 100, 1.5);
     const futureEquity = inputs.newHomePrice * Math.pow(1 + inputs.newHomeAppreciation / 100, 3) - calculateLoan(inputs.newHomePrice - downPayment, inputs.newLoanRate, inputs.newLoanTerm, 36).remainingBalance;
-    const monthlySavingsAfterExpenses = futureIncome - futureExpenses - totalPayment - inputs.monthlyDebt;
     return {
       loan,
       downPayment,
@@ -81,19 +81,27 @@ function App() {
       futureNetWorth: futureEquity + futureSavings,
       monthlySavingsAfterExpenses,
       calculations: {
-        currentEquity: `Price ($${formatNumber(inputs.currentHomePrice)}) - Loan Balance ($${formatNumber(inputs.currentLoanBalance)}) = $${formatNumber(currentEquity)}`,
-        downPayment: `${inputs.downPaymentPercent}% of $${formatNumber(inputs.newHomePrice)} = $${formatNumber(downPayment)}`,
-        closingCosts: `${inputs.closingCostPercent}% of $${formatNumber(inputs.newHomePrice)} = $${formatNumber(closingCosts)}`,
-        realtorFees: `${inputs.realtorFeePercent}% of $${formatNumber(inputs.currentHomePrice)} = $${formatNumber(realtorFees)}`,
-        savingsAfterBuy: `Savings ($${formatNumber(inputs.savings)}) + Equity ($${formatNumber(currentEquity)}) - Down Payment ($${formatNumber(downPayment)}) - Closing Costs ($${formatNumber(closingCosts)}) - Realtor Fees ($${formatNumber(realtorFees)}) = $${formatNumber(savingsAfterBuy)}`,
-        monthlyPropertyTax: `${inputs.propertyTaxPercent}% of $${formatNumber(inputs.newHomePrice)} / 12 = $${formatNumber(monthlyPropertyTax)}`,
-        totalPayment: `Loan ($${formatNumber(loan.payment)}) + Tax ($${formatNumber(monthlyPropertyTax)}) + Insurance ($${formatNumber(inputs.insurance)}) = $${formatNumber(totalPayment)}`,
-        futureIncome: `$${formatNumber(inputs.monthlyIncome)} * (1 + ${inputs.incomeGrowthPercent / 100})^3 = $${formatNumber(futureIncome)}`,
-        futureExpenses: `$${formatNumber(inputs.monthlyExpenses)} * (1 + ${inputs.inflationPercent / 100})^3 = $${formatNumber(futureExpenses)}`,
-        dti: `(Debt ($${formatNumber(inputs.monthlyDebt)}) + Payment ($${formatNumber(totalPayment)})) / Income ($${formatNumber(inputs.monthlyIncome)}) = ${(dti * 100).toFixed(2)}%`,
-        futureSavings: `Initial ($${formatNumber(savingsAfterBuy)}) * (1 + ${inputs.savingsInterestRate / 100})^3 + Monthly ($${formatNumber(inputs.monthlySavingsBuy)} * 12 * 3) * (1 + ${inputs.savingsInterestRate / 100})^1.5 = $${formatNumber(futureSavings)}`,
-        futureEquity: `Future Price ($${formatNumber(inputs.newHomePrice * Math.pow(1 + inputs.newHomeAppreciation / 100, 3))}) - Loan Balance ($${formatNumber(calculateLoan(inputs.newHomePrice - downPayment, inputs.newLoanRate, inputs.newLoanTerm, 36).remainingBalance)}) = $${formatNumber(futureEquity)}`,
-        monthlySavingsAfterExpenses: `Income ($${formatNumber(futureIncome)}) - Expenses ($${formatNumber(futureExpenses)}) - Payment ($${formatNumber(totalPayment)}) - Debt ($${formatNumber(inputs.monthlyDebt)}) = $${formatNumber(monthlySavingsAfterExpenses)}`,
+        homeValues: {
+          currentEquity: `Price ($${formatNumber(inputs.currentHomePrice)}) - Loan Balance ($${formatNumber(inputs.currentLoanBalance)}) = $${formatNumber(currentEquity)}`,
+          futureEquity: `Future Price ($${formatNumber(inputs.newHomePrice * Math.pow(1 + inputs.newHomeAppreciation / 100, 3))}) - Loan Balance ($${formatNumber(calculateLoan(inputs.newHomePrice - downPayment, inputs.newLoanRate, inputs.newLoanTerm, 36).remainingBalance)}) = $${formatNumber(futureEquity)}`,
+        },
+        financials: {
+          downPayment: `${inputs.downPaymentPercent}% of $${formatNumber(inputs.newHomePrice)} = $${formatNumber(downPayment)}`,
+          closingCosts: `${inputs.closingCostPercent}% of $${formatNumber(inputs.newHomePrice)} = $${formatNumber(closingCosts)}`,
+          realtorFees: `${inputs.realtorFeePercent}% of $${formatNumber(inputs.currentHomePrice)} = $${formatNumber(realtorFees)}`,
+          savingsAfterBuy: `Savings ($${formatNumber(inputs.savings)}) + Equity ($${formatNumber(currentEquity)}) - Down Payment ($${formatNumber(downPayment)}) - Closing Costs ($${formatNumber(closingCosts)}) - Realtor Fees ($${formatNumber(realtorFees)}) = $${formatNumber(savingsAfterBuy)}`,
+          futureSavings: `Initial ($${formatNumber(savingsAfterBuy)}) * (1 + ${inputs.savingsInterestRate / 100})^3 + Monthly ($${formatNumber(inputs.monthlySavingsBuy)} * 12 * 3) * (1 + ${inputs.savingsInterestRate / 100})^1.5 = $${formatNumber(futureSavings)}`,
+          futureIncome: `$${formatNumber(inputs.monthlyIncome)} * (1 + ${inputs.incomeGrowthPercent / 100})^3 = $${formatNumber(futureIncome)}`,
+          futureExpenses: `$${formatNumber(inputs.monthlyExpenses)} * (1 + ${inputs.inflationPercent / 100})^3 = $${formatNumber(futureExpenses)}`,
+        },
+        payments: {
+          monthlyPropertyTax: `${inputs.propertyTaxPercent}% of $${formatNumber(inputs.newHomePrice)} / 12 = $${formatNumber(monthlyPropertyTax)}`,
+          totalPayment: `Loan ($${formatNumber(loan.payment)}) + Tax ($${formatNumber(monthlyPropertyTax)}) + Insurance ($${formatNumber(inputs.insurance)}) = $${formatNumber(totalPayment)}`,
+          monthlySavingsAfterExpenses: `Income ($${formatNumber(inputs.monthlyIncome)}) - Expenses ($${formatNumber(inputs.monthlyExpenses)}) - Payment ($${formatNumber(totalPayment)}) - Debt ($${formatNumber(inputs.monthlyDebt)}) = $${formatNumber(monthlySavingsAfterExpenses)}`,
+        },
+        metrics: {
+          dti: `(Debt ($${formatNumber(inputs.monthlyDebt)}) + Payment ($${formatNumber(totalPayment)})) / Income ($${formatNumber(inputs.monthlyIncome)}) = ${(dti * 100).toFixed(2)}%`,
+        },
       },
     };
   };
@@ -111,7 +119,6 @@ function App() {
     const closingCosts = futureNewHomePrice * (inputs.closingCostPercent / 100);
     const realtorFees = futureCurrentHomePrice * (inputs.realtorFeePercent / 100);
     
-    // Use downPaymentPercent from inputs
     const downPayment = futureNewHomePrice * (inputs.downPaymentPercent / 100);
     const downPaymentPercent = inputs.downPaymentPercent;
     const loan = calculateLoan(futureNewHomePrice - downPayment, inputs.newLoanRate, inputs.newLoanTerm);
@@ -121,7 +128,6 @@ function App() {
     const dti = (inputs.monthlyDebt + totalPayment) / futureIncome;
     const monthlySavingsAfterExpenses = futureIncome - futureExpenses - totalPayment - inputs.monthlyDebt;
 
-    // Calculate required down payment for target savings
     const targetSavings = inputs.monthlySavingsBuy;
     const monthlyRate = inputs.newLoanRate / 100 / 12;
     const n = inputs.newLoanTerm * 12;
@@ -146,21 +152,29 @@ function App() {
       dti,
       monthlySavingsAfterExpenses,
       calculations: {
-        futureSavings: `Initial ($${formatNumber(inputs.savings)}) * (1 + ${inputs.savingsInterestRate / 100})^${years} + Monthly ($${formatNumber(inputs.monthlySavingsStay)} * 12 * ${years}) * (1 + ${inputs.savingsInterestRate / 100})^${years}/2 = $${formatNumber(futureSavings)}`,
-        futureCurrentHomePrice: `$${formatNumber(inputs.currentHomePrice)} * (1 + ${inputs.currentHomeAppreciation / 100})^${years} = $${formatNumber(futureCurrentHomePrice)}`,
-        futureEquity: `Future Price ($${formatNumber(futureCurrentHomePrice)}) - Loan Balance ($${formatNumber(currentLoan.remainingBalance)}) = $${formatNumber(futureEquity)}`,
-        futureNewHomePrice: `$${formatNumber(inputs.newHomePrice)} * (1 + ${inputs.newHomeAppreciation / 100})^${years} = $${formatNumber(futureNewHomePrice)}`,
-        futureIncome: `$${formatNumber(inputs.monthlyIncome)} * (1 + ${inputs.incomeGrowthPercent / 100})^${years} = $${formatNumber(futureIncome)}`,
-        futureExpenses: `$${formatNumber(inputs.monthlyExpenses)} * (1 + ${inputs.inflationPercent / 100})^${years} = $${formatNumber(futureExpenses)}`,
-        downPayment: `${inputs.downPaymentPercent}% of $${formatNumber(futureNewHomePrice)} = $${formatNumber(downPayment)}`,
-        requiredDownPayment: `Target Savings ($${formatNumber(targetSavings)}) allows Total Payment ≤ $${formatNumber(totalPaymentAllowed)}; Loan Payment = $${formatNumber(loanPayment)}; Loan Amount = $${formatNumber(requiredLoanAmount)}; Required Down Payment = $${formatNumber(futureNewHomePrice)} - $${formatNumber(requiredLoanAmount)} = $${formatNumber(requiredDownPayment)} (${requiredDownPaymentPercent.toFixed(2)}%)`,
-        closingCosts: `${inputs.closingCostPercent}% of $${formatNumber(futureNewHomePrice)} = $${formatNumber(closingCosts)}`,
-        realtorFees: `${inputs.realtorFeePercent}% of $${formatNumber(futureCurrentHomePrice)} = $${formatNumber(realtorFees)}`,
-        savingsAfterBuy: `Savings ($${formatNumber(futureSavings)}) + Equity ($${formatNumber(futureEquity)}) - Down Payment ($${formatNumber(downPayment)}) - Closing Costs ($${formatNumber(closingCosts)}) - Realtor Fees ($${formatNumber(realtorFees)}) = $${formatNumber(savingsAfterBuy)}`,
-        monthlyPropertyTax: `${inputs.propertyTaxPercent}% of $${formatNumber(futureNewHomePrice)} / 12 = $${formatNumber(monthlyPropertyTax)}`,
-        totalPayment: `Loan ($${formatNumber(loan.payment)}) + Tax ($${formatNumber(monthlyPropertyTax)}) + Insurance ($${formatNumber(inputs.insurance)}) = $${formatNumber(totalPayment)}`,
-        monthlySavingsAfterExpenses: `Income ($${formatNumber(futureIncome)}) - Expenses ($${formatNumber(futureExpenses)}) - Payment ($${formatNumber(totalPayment)}) - Debt ($${formatNumber(inputs.monthlyDebt)}) = $${formatNumber(monthlySavingsAfterExpenses)}`,
-        dti: `(Debt ($${formatNumber(inputs.monthlyDebt)}) + Payment ($${formatNumber(totalPayment)})) / Income ($${formatNumber(futureIncome)}) = ${(dti * 100).toFixed(2)}%`,
+        homeValues: {
+          futureCurrentHomePrice: `$${formatNumber(inputs.currentHomePrice)} * (1 + ${inputs.currentHomeAppreciation / 100})^${years} = $${formatNumber(futureCurrentHomePrice)}`,
+          futureEquity: `Future Price ($${formatNumber(futureCurrentHomePrice)}) - Loan Balance ($${formatNumber(currentLoan.remainingBalance)}) = $${formatNumber(futureEquity)}`,
+          futureNewHomePrice: `$${formatNumber(inputs.newHomePrice)} * (1 + ${inputs.newHomeAppreciation / 100})^${years} = $${formatNumber(futureNewHomePrice)}`,
+        },
+        financials: {
+          futureSavings: `Initial ($${formatNumber(inputs.savings)}) * (1 + ${inputs.savingsInterestRate / 100})^${years} + Monthly ($${formatNumber(inputs.monthlySavingsStay)} * 12 * ${years}) * (1 + ${inputs.savingsInterestRate / 100})^${years}/2 = $${formatNumber(futureSavings)}`,
+          futureIncome: `$${formatNumber(inputs.monthlyIncome)} * (1 + ${inputs.incomeGrowthPercent / 100})^${years} = $${formatNumber(futureIncome)}`,
+          futureExpenses: `$${formatNumber(inputs.monthlyExpenses)} * (1 + ${inputs.inflationPercent / 100})^${years} = $${formatNumber(futureExpenses)}`,
+          downPayment: `${inputs.downPaymentPercent}% of $${formatNumber(futureNewHomePrice)} = $${formatNumber(downPayment)}`,
+          requiredDownPayment: `Target Savings ($${formatNumber(targetSavings)}) allows Total Payment ≤ $${formatNumber(totalPaymentAllowed)}; Loan Payment = $${formatNumber(loanPayment)}; Loan Amount = $${formatNumber(requiredLoanAmount)}; Required Down Payment = $${formatNumber(futureNewHomePrice)} - $${formatNumber(requiredLoanAmount)} = $${formatNumber(requiredDownPayment)} (${requiredDownPaymentPercent.toFixed(2)}%)`,
+          closingCosts: `${inputs.closingCostPercent}% of $${formatNumber(futureNewHomePrice)} = $${formatNumber(closingCosts)}`,
+          realtorFees: `${inputs.realtorFeePercent}% of $${formatNumber(futureCurrentHomePrice)} = $${formatNumber(realtorFees)}`,
+          savingsAfterBuy: `Savings ($${formatNumber(futureSavings)}) + Equity ($${formatNumber(futureEquity)}) - Down Payment ($${formatNumber(downPayment)}) - Closing Costs ($${formatNumber(closingCosts)}) - Realtor Fees ($${formatNumber(realtorFees)}) = $${formatNumber(savingsAfterBuy)}`,
+        },
+        payments: {
+          monthlyPropertyTax: `${inputs.propertyTaxPercent}% of $${formatNumber(futureNewHomePrice)} / 12 = $${formatNumber(monthlyPropertyTax)}`,
+          totalPayment: `Loan ($${formatNumber(loan.payment)}) + Tax ($${formatNumber(monthlyPropertyTax)}) + Insurance ($${formatNumber(inputs.insurance)}) = $${formatNumber(totalPayment)}`,
+          monthlySavingsAfterExpenses: `Income ($${formatNumber(futureIncome)}) - Expenses ($${formatNumber(futureExpenses)}) - Payment ($${formatNumber(totalPayment)}) - Debt ($${formatNumber(inputs.monthlyDebt)}) = $${formatNumber(monthlySavingsAfterExpenses)}`,
+        },
+        metrics: {
+          dti: `(Debt ($${formatNumber(inputs.monthlyDebt)}) + Payment ($${formatNumber(totalPayment)})) / Income ($${formatNumber(futureIncome)}) = ${(dti * 100).toFixed(2)}%`,
+        },
       },
     };
   };
@@ -297,19 +311,23 @@ function App() {
             <td className="border p-2">
               Buy Now
               <div className="text-sm">
-                <p>{buyNow.calculations.currentEquity}</p>
-                <p>{buyNow.calculations.downPayment}</p>
-                <p>{buyNow.calculations.closingCosts}</p>
-                <p>{buyNow.calculations.realtorFees}</p>
-                <p>{buyNow.calculations.savingsAfterBuy}</p>
-                <p>{buyNow.calculations.monthlyPropertyTax}</p>
-                <p>{buyNow.calculations.totalPayment}</p>
-                <p>{buyNow.calculations.futureIncome}</p>
-                <p>{buyNow.calculations.futureExpenses}</p>
-                <p>{buyNow.calculations.monthlySavingsAfterExpenses}</p>
-                <p>{buyNow.calculations.futureSavings}</p>
-                <p>{buyNow.calculations.futureEquity}</p>
-                <p>{buyNow.calculations.dti}</p>
+                <div><strong>Home Values</strong></div>
+                <p>{buyNow.calculations.homeValues.currentEquity}</p>
+                <p>{buyNow.calculations.homeValues.futureEquity}</p>
+                <div><strong>Financials</strong></div>
+                <p>{buyNow.calculations.financials.downPayment}</p>
+                <p>{buyNow.calculations.financials.closingCosts}</p>
+                <p>{buyNow.calculations.financials.realtorFees}</p>
+                <p>{buyNow.calculations.financials.savingsAfterBuy}</p>
+                <p>{buyNow.calculations.financials.futureSavings}</p>
+                <p>{buyNow.calculations.financials.futureIncome}</p>
+                <p>{buyNow.calculations.financials.futureExpenses}</p>
+                <div><strong>Payments</strong></div>
+                <p>{buyNow.calculations.payments.monthlyPropertyTax}</p>
+                <p>{buyNow.calculations.payments.totalPayment}</p>
+                <p>{buyNow.calculations.payments.monthlySavingsAfterExpenses}</p>
+                <div><strong>Metrics</strong></div>
+                <p>{buyNow.calculations.metrics.dti}</p>
               </div>
             </td>
             <td className="border p-2">${formatNumber(buyNow.totalPayment)}</td>
@@ -324,21 +342,25 @@ function App() {
               <td className="border p-2">
                 Stay {s.year} Year{s.year > 1 ? 's' : ''}
                 <div className="text-sm">
-                  <p>{s.calculations.futureCurrentHomePrice}</p>
-                  <p>{s.calculations.futureEquity}</p>
-                  <p>{s.calculations.futureNewHomePrice}</p>
-                  <p>{s.calculations.futureSavings}</p>
-                  <p>{s.calculations.futureIncome}</p>
-                  <p>{s.calculations.futureExpenses}</p>
-                  <p>{s.calculations.downPayment}</p>
-                  <p>{s.calculations.requiredDownPayment}</p>
-                  <p>{s.calculations.closingCosts}</p>
-                  <p>{s.calculations.realtorFees}</p>
-                  <p>{s.calculations.savingsAfterBuy}</p>
-                  <p>{s.calculations.monthlyPropertyTax}</p>
-                  <p>{s.calculations.totalPayment}</p>
-                  <p>{s.calculations.monthlySavingsAfterExpenses}</p>
-                  <p>{s.calculations.dti}</p>
+                  <div><strong>Home Values</strong></div>
+                  <p>{s.calculations.homeValues.futureCurrentHomePrice}</p>
+                  <p>{s.calculations.homeValues.futureEquity}</p>
+                  <p>{s.calculations.homeValues.futureNewHomePrice}</p>
+                  <div><strong>Financials</strong></div>
+                  <p>{s.calculations.financials.futureSavings}</p>
+                  <p>{s.calculations.financials.futureIncome}</p>
+                  <p>{s.calculations.financials.futureExpenses}</p>
+                  <p>{s.calculations.financials.downPayment}</p>
+                  <p>{s.calculations.financials.requiredDownPayment}</p>
+                  <p>{s.calculations.financials.closingCosts}</p>
+                  <p>{s.calculations.financials.realtorFees}</p>
+                  <p>{s.calculations.financials.savingsAfterBuy}</p>
+                  <div><strong>Payments</strong></div>
+                  <p>{s.calculations.payments.monthlyPropertyTax}</p>
+                  <p>{s.calculations.payments.totalPayment}</p>
+                  <p>{s.calculations.payments.monthlySavingsAfterExpenses}</p>
+                  <div><strong>Metrics</strong></div>
+                  <p>{s.calculations.metrics.dti}</p>
                 </div>
               </td>
               <td className="border p-2">${formatNumber(s.totalPayment)}</td>
@@ -368,7 +390,7 @@ function App() {
               <li>Monthly Payment: ${formatNumber(s.totalPayment)}</li>
               <li>Monthly Savings: ${formatNumber(s.monthlySavingsAfterExpenses)}</li>
               <li>Down Payment: ${formatNumber(s.downPayment)}</li>
-              <li>Required Down Payment for ${formatNumber(inputs.monthlySavingsBuy)} Savings: ${formatNumber(s.calculations.requiredDownPayment.split(' = ')[1].split(' (')[0].replace('$', '').replace(/,/g, ''))}</li>
+              <li>Required Down Payment for ${formatNumber(inputs.monthlySavingsBuy)} Savings: ${formatNumber(s.calculations.financials.requiredDownPayment.split(' = ')[1].split(' (')[0].replace('$', '').replace(/,/g, ''))}</li>
               <li>Savings After Buy: ${formatNumber(s.savingsAfterBuy)}</li>
               <li>Net Worth (Year 3): ${formatNumber(s.netWorth)}</li>
             </ul>
@@ -376,7 +398,7 @@ function App() {
         ))}
         <p className="font-semibold">Key Considerations:</p>
         <p>Buying now locks in a home price of ${formatNumber(inputs.newHomePrice)} but requires a ${formatNumber(buyNow.downPayment)} down payment and a high monthly payment of ${formatNumber(buyNow.totalPayment)}, leaving ${formatNumber(buyNow.monthlySavingsAfterExpenses)} in monthly savings. Your net worth in 3 years is projected at ${formatNumber(buyNow.futureNetWorth)}.</p>
-        <p>Waiting allows you to save ${formatNumber(inputs.monthlySavingsStay)} monthly, growing your savings to ${formatNumber(stay[2].calculations.futureSavings.split(' = ')[1].replace('$', '').replace(/,/g, ''))} by year 3. However, the home price rises to ${formatNumber(stay[2].calculations.futureNewHomePrice.split(' = ')[1].replace('$', '').replace(/,/g, ''))}, and you may need a larger down payment (up to ${formatNumber(stay[2].calculations.requiredDownPayment.split(' = ')[1].split(' (')[0].replace('$', '').replace(/,/g, ''))}) to maintain ${formatNumber(inputs.monthlySavingsBuy)} monthly savings. Savings after buy may be negative (e.g., ${formatNumber(stay[2].savingsAfterBuy)} in year 3), indicating insufficient funds.</p>
+        <p>Waiting allows you to save ${formatNumber(inputs.monthlySavingsStay)} monthly, growing your savings to ${formatNumber(stay[2].calculations.financials.futureSavings.split(' = ')[1].replace('$', '').replace(/,/g, ''))} by year 3. However, the home price rises to ${formatNumber(stay[2].calculations.homeValues.futureNewHomePrice.split(' = ')[1].replace('$', '').replace(/,/g, ''))}, and you may need a larger down payment (up to ${formatNumber(stay[2].calculations.financials.requiredDownPayment.split(' = ')[1].split(' (')[0].replace('$', '').replace(/,/g, ''))}) to maintain ${formatNumber(inputs.monthlySavingsBuy)} monthly savings. Savings after buy may be negative (e.g., ${formatNumber(stay[2].savingsAfterBuy)} in year 3), indicating insufficient funds.</p>
         <p><strong>Recommendation:</strong> Buy now if you can afford the high payments and want to start building equity sooner. Wait if you need more savings to cover future costs or prefer lower monthly payments now.</p>
       </div>
     </div>
