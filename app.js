@@ -1,5 +1,4 @@
 function App() {
-  // Check if HeadlessUI is defined
   const HeadlessUI = window.HeadlessUI;
   const hasHeadlessUI = !!HeadlessUI;
 
@@ -68,7 +67,6 @@ function App() {
     const closingCosts = inputs.newHomePrice * (inputs.closingCostPercent / 100);
     const realtorFees = inputs.currentHomePrice * (inputs.realtorFeePercent / 100);
     const savingsAfterBuy = inputs.savings + currentEquity - downPayment - closingCosts - realtorFees;
-    const requiredDownPaymentNonNegative = inputs.savings + currentEquity - closingCosts - realtorFees;
     const loan = calculateLoan(inputs.newHomePrice - downPayment, inputs.newLoanRate, inputs.newLoanTerm);
     const monthlyPropertyTax = (inputs.newHomePrice * inputs.propertyTaxPercent) / 100 / 12;
     const totalPayment = loan.payment + monthlyPropertyTax + inputs.insurance;
@@ -78,17 +76,31 @@ function App() {
     const futureEquity = inputs.newHomePrice * Math.pow(1 + inputs.newHomeAppreciation / 100, 3) - calculateLoan(inputs.newHomePrice - downPayment, inputs.newLoanRate, inputs.newLoanTerm, 36).remainingBalance;
     const futureIncome = inputs.monthlyIncome * Math.pow(1 + inputs.incomeGrowthPercent / 100, 3);
     const futureExpenses = inputs.monthlyExpenses * Math.pow(1 + inputs.inflationPercent / 100, 3);
+    const targetSavings = inputs.monthlySavingsBuy;
+    const monthlyRate = inputs.newLoanRate / 100 / 12;
+    const n = inputs.newLoanTerm * 12;
+    const totalPaymentAllowed = inputs.monthlyIncome - inputs.monthlyExpenses - targetSavings - inputs.monthlyDebt;
+    const loanPayment = totalPaymentAllowed - monthlyPropertyTax - inputs.insurance;
+    let requiredLoanAmount = 0;
+    if (loanPayment > 0) {
+      requiredLoanAmount = loanPayment * (Math.pow(1 + monthlyRate, n) - 1) / (monthlyRate * Math.pow(1 + monthlyRate, n));
+    }
+    requiredLoanAmount = Math.min(requiredLoanAmount, inputs.newHomePrice);
+    const requiredDownPayment = inputs.newHomePrice - requiredLoanAmount;
+    const savingsAfterRequiredDownPayment = inputs.savings + currentEquity - requiredDownPayment - closingCosts - realtorFees;
     return {
       loan,
       downPayment,
-      requiredDownPaymentNonNegative,
+      requiredDownPayment,
       savingsAfterBuy,
+      savingsAfterRequiredDownPayment,
       netWorth: currentEquity + inputs.savings,
       totalPayment,
       dti,
       futureSavings,
       futureNetWorth: futureEquity + futureSavings,
       monthlySavingsAfterExpenses,
+      newMonthlySavings: monthlySavingsAfterExpenses,
       calculations: {
         homeValues: {
           currentEquity: `Price ($${formatNumber(inputs.currentHomePrice)}) - Loan Balance ($${formatNumber(inputs.currentLoanBalance)}) = $${formatNumber(currentEquity)}`,
@@ -96,10 +108,11 @@ function App() {
         },
         financials: {
           downPayment: `${inputs.downPaymentPercent}% of $${formatNumber(inputs.newHomePrice)} = $${formatNumber(downPayment)}`,
-          requiredDownPaymentNonNegative: `Savings ($${formatNumber(inputs.savings)}) + Equity ($${formatNumber(currentEquity)}) - Closing Costs ($${formatNumber(closingCosts)}) - Realtor Fees ($${formatNumber(realtorFees)}) = $${formatNumber(requiredDownPaymentNonNegative)}`,
+          requiredDownPayment: `Target Savings ($${formatNumber(targetSavings)}) allows Total Payment ≤ $${formatNumber(totalPaymentAllowed)}; Loan Payment = $${formatNumber(loanPayment)}; Loan Amount = $${formatNumber(requiredLoanAmount)}; Required Down Payment = $${formatNumber(inputs.newHomePrice)} - $${formatNumber(requiredLoanAmount)} = $${formatNumber(requiredDownPayment)}`,
           closingCosts: `${inputs.closingCostPercent}% of $${formatNumber(inputs.newHomePrice)} = $${formatNumber(closingCosts)}`,
           realtorFees: `${inputs.realtorFeePercent}% of $${formatNumber(inputs.currentHomePrice)} = $${formatNumber(realtorFees)}`,
           savingsAfterBuy: `Savings ($${formatNumber(inputs.savings)}) + Equity ($${formatNumber(currentEquity)}) - Down Payment ($${formatNumber(downPayment)}) - Closing Costs ($${formatNumber(closingCosts)}) - Realtor Fees ($${formatNumber(realtorFees)}) = $${formatNumber(savingsAfterBuy)}`,
+          savingsAfterRequiredDownPayment: `Savings ($${formatNumber(inputs.savings)}) + Equity ($${formatNumber(currentEquity)}) - Required Down Payment ($${formatNumber(requiredDownPayment)}) - Closing Costs ($${formatNumber(closingCosts)}) - Realtor Fees ($${formatNumber(realtorFees)}) = $${formatNumber(savingsAfterRequiredDownPayment)}`,
           futureSavings: `Initial ($${formatNumber(savingsAfterBuy)}) * (1 + ${inputs.savingsInterestRate / 100})^3 + Monthly ($${formatNumber(inputs.monthlySavingsBuy)} * 12 * 3) * (1 + ${inputs.savingsInterestRate / 100})^1.5 = $${formatNumber(futureSavings)}`,
           futureIncome: `$${formatNumber(inputs.monthlyIncome)} * (1 + ${inputs.incomeGrowthPercent / 100})^3 = $${formatNumber(futureIncome)}`,
           futureExpenses: `$${formatNumber(inputs.monthlyExpenses)} * (1 + ${inputs.inflationPercent / 100})^3 = $${formatNumber(futureExpenses)}`,
@@ -131,7 +144,6 @@ function App() {
     
     const downPayment = futureNewHomePrice * (inputs.downPaymentPercent / 100);
     const downPaymentPercent = inputs.downPaymentPercent;
-    const requiredDownPaymentNonNegative = futureSavings + futureEquity - closingCosts - realtorFees;
     const loan = calculateLoan(futureNewHomePrice - downPayment, inputs.newLoanRate, inputs.newLoanTerm);
     const monthlyPropertyTax = (futureNewHomePrice * inputs.propertyTaxPercent) / 100 / 12;
     const totalPayment = loan.payment + monthlyPropertyTax + inputs.insurance;
@@ -151,19 +163,22 @@ function App() {
     requiredLoanAmount = Math.min(requiredLoanAmount, futureNewHomePrice);
     const requiredDownPayment = futureNewHomePrice - requiredLoanAmount;
     const requiredDownPaymentPercent = (requiredDownPayment / futureNewHomePrice) * 100;
+    const savingsAfterRequiredDownPayment = futureSavings + futureEquity - requiredDownPayment - closingCosts - realtorFees;
 
     return {
       year: years,
       loan,
       downPayment,
       downPaymentPercent,
-      requiredDownPaymentNonNegative,
+      requiredDownPayment,
       savingsAfterBuy,
+      savingsAfterRequiredDownPayment,
       netWorth: futureEquity + futureSavings,
       totalPayment,
       dti,
       futureSavings,
       monthlySavingsAfterExpenses,
+      newMonthlySavings: targetSavings,
       calculations: {
         homeValues: {
           futureCurrentHomePrice: `$${formatNumber(inputs.currentHomePrice)} * (1 + ${inputs.currentHomeAppreciation / 100})^${years} = $${formatNumber(futureCurrentHomePrice)}`,
@@ -176,10 +191,10 @@ function App() {
           futureExpenses: `$${formatNumber(inputs.monthlyExpenses)} * (1 + ${inputs.inflationPercent / 100})^${years} = $${formatNumber(futureExpenses)}`,
           downPayment: `${inputs.downPaymentPercent}% of $${formatNumber(futureNewHomePrice)} = $${formatNumber(downPayment)}`,
           requiredDownPayment: `Target Savings ($${formatNumber(targetSavings)}) allows Total Payment ≤ $${formatNumber(totalPaymentAllowed)}; Loan Payment = $${formatNumber(loanPayment)}; Loan Amount = $${formatNumber(requiredLoanAmount)}; Required Down Payment = $${formatNumber(futureNewHomePrice)} - $${formatNumber(requiredLoanAmount)} = $${formatNumber(requiredDownPayment)} (${requiredDownPaymentPercent.toFixed(2)}%)`,
-          requiredDownPaymentNonNegative: `Savings ($${formatNumber(futureSavings)}) + Equity ($${formatNumber(futureEquity)}) - Closing Costs ($${formatNumber(closingCosts)}) - Realtor Fees ($${formatNumber(realtorFees)}) = $${formatNumber(requiredDownPaymentNonNegative)}`,
+          savingsAfterBuy: `Savings ($${formatNumber(futureSavings)}) + Equity ($${formatNumber(futureEquity)}) - Down Payment ($${formatNumber(downPayment)}) - Closing Costs ($${formatNumber(closingCosts)}) - Realtor Fees ($${formatNumber(realtorFees)}) = $${formatNumber(savingsAfterBuy)}`,
+          savingsAfterRequiredDownPayment: `Savings ($${formatNumber(futureSavings)}) + Equity ($${formatNumber(futureEquity)}) - Required Down Payment ($${formatNumber(requiredDownPayment)}) - Closing Costs ($${formatNumber(closingCosts)}) - Realtor Fees ($${formatNumber(realtorFees)}) = $${formatNumber(savingsAfterRequiredDownPayment)}`,
           closingCosts: `${inputs.closingCostPercent}% of $${formatNumber(futureNewHomePrice)} = $${formatNumber(closingCosts)}`,
           realtorFees: `${inputs.realtorFeePercent}% of $${formatNumber(futureCurrentHomePrice)} = $${formatNumber(realtorFees)}`,
-          savingsAfterBuy: `Savings ($${formatNumber(futureSavings)}) + Equity ($${formatNumber(futureEquity)}) - Down Payment ($${formatNumber(downPayment)}) - Closing Costs ($${formatNumber(closingCosts)}) - Realtor Fees ($${formatNumber(realtorFees)}) = $${formatNumber(savingsAfterBuy)}`,
         },
         payments: {
           monthlyPropertyTax: `${inputs.propertyTaxPercent}% of $${formatNumber(futureNewHomePrice)} / 12 = $${formatNumber(monthlyPropertyTax)}`,
@@ -201,7 +216,6 @@ function App() {
     setModalOpen(true);
   };
 
-  // Fallback UI if HeadlessUI is not available
   const renderInputSection = (title, fields) => (
     <div className="mb-4">
       <h3 className="text-sm font-medium bg-gray-700 px-4 py-2 rounded-lg">{title}</h3>
@@ -313,7 +327,6 @@ function App() {
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar for Inputs */}
       <div className="w-80 bg-gray-800 text-white p-4 overflow-y-auto">
         <h2 className="text-lg font-semibold mb-4">Input Parameters</h2>
         {hasHeadlessUI ? (
@@ -337,7 +350,6 @@ function App() {
           </select>
         </div>
       </div>
-      {/* Main Content */}
       <div className="flex-1 p-6">
         <h1 className="text-2xl font-bold mb-4">Home Purchase Comparison</h1>
         <table className="w-full border-collapse border mt-4">
@@ -347,8 +359,9 @@ function App() {
               <th className="border p-2">Monthly Payment</th>
               <th className="border p-2">Monthly Savings</th>
               <th className="border p-2">Down Payment</th>
-              <th className="border p-2">Required Down Payment (Non-Negative Savings)</th>
-              <th className="border p-2">Savings After Buy</th>
+              <th className="border p-2">Required Down Payment</th>
+              <th className="border p-2">Savings After Required Down Payment</th>
+              <th className="border p-2">New Monthly Savings</th>
               <th className="border p-2">Future Savings</th>
               <th className="border p-2">Net Worth</th>
             </tr>
@@ -362,8 +375,9 @@ function App() {
               <td className="border p-2 font-bold">${formatNumber(buyNow.totalPayment)}</td>
               <td className="border p-2 ${buyNow.monthlySavingsAfterExpenses >= 0 ? 'text-green-600' : 'text-red-600'}">${formatNumber(buyNow.monthlySavingsAfterExpenses)}</td>
               <td className="border p-2">${formatNumber(buyNow.downPayment)}</td>
-              <td className="border p-2">${formatNumber(buyNow.requiredDownPaymentNonNegative)}</td>
-              <td className="border p-2 ${buyNow.savingsAfterBuy >= 0 ? 'text-green-600' : 'text-red-600'}">${formatNumber(buyNow.savingsAfterBuy)}</td>
+              <td className="border p-2">${formatNumber(buyNow.requiredDownPayment)}</td>
+              <td className="border p-2 ${buyNow.savingsAfterRequiredDownPayment >= 0 ? 'text-green-600' : 'text-red-600'}">${formatNumber(buyNow.savingsAfterRequiredDownPayment)}</td>
+              <td className="border p-2 ${buyNow.newMonthlySavings >= 0 ? 'text-green-600' : 'text-red-600'}">${formatNumber(buyNow.newMonthlySavings)}</td>
               <td className="border p-2">${formatNumber(buyNow.futureSavings)}</td>
               <td className="border p-2 font-bold">${formatNumber(buyNow.futureNetWorth)}</td>
             </tr>
@@ -375,8 +389,9 @@ function App() {
               <td className="border p-2 font-bold">${formatNumber(stay.totalPayment)}</td>
               <td className="border p-2 ${stay.monthlySavingsAfterExpenses >= 0 ? 'text-green-600' : 'text-red-600'}">${formatNumber(stay.monthlySavingsAfterExpenses)}</td>
               <td className="border p-2">${formatNumber(stay.downPayment)}</td>
-              <td className="border p-2">${formatNumber(stay.requiredDownPaymentNonNegative)}</td>
-              <td className="border p-2 ${stay.savingsAfterBuy >= 0 ? 'text-green-600' : 'text-red-600'}">${formatNumber(stay.savingsAfterBuy)}</td>
+              <td className="border p-2">${formatNumber(stay.requiredDownPayment)}</td>
+              <td className="border p-2 ${stay.savingsAfterRequiredDownPayment >= 0 ? 'text-green-600' : 'text-red-600'}">${formatNumber(stay.savingsAfterRequiredDownPayment)}</td>
+              <td className="border p-2 ${stay.newMonthlySavings >= 0 ? 'text-green-600' : 'text-red-600'}">${formatNumber(stay.newMonthlySavings)}</td>
               <td className="border p-2">${formatNumber(stay.futureSavings)}</td>
               <td className="border p-2 font-bold">${formatNumber(stay.netWorth)}</td>
             </tr>
@@ -389,8 +404,9 @@ function App() {
             <li>Monthly Payment: ${formatNumber(buyNow.totalPayment)}</li>
             <li>Monthly Savings: ${formatNumber(buyNow.monthlySavingsAfterExpenses)}</li>
             <li>Down Payment: ${formatNumber(buyNow.downPayment)}</li>
-            <li>Required Down Payment (Non-Negative Savings): ${formatNumber(buyNow.requiredDownPaymentNonNegative)}</li>
-            <li>Savings After Buy: ${formatNumber(buyNow.savingsAfterBuy)}</li>
+            <li>Required Down Payment: ${formatNumber(buyNow.requiredDownPayment)}</li>
+            <li>Savings After Required Down Payment: ${formatNumber(buyNow.savingsAfterRequiredDownPayment)}</li>
+            <li>New Monthly Savings: ${formatNumber(buyNow.newMonthlySavings)}</li>
             <li>Future Savings (Year 3): ${formatNumber(buyNow.futureSavings)}</li>
             <li>Net Worth (Year 3): ${formatNumber(buyNow.futureNetWorth)}</li>
           </ul>
@@ -399,15 +415,16 @@ function App() {
             <li>Monthly Payment: ${formatNumber(stay.totalPayment)}</li>
             <li>Monthly Savings: ${formatNumber(stay.monthlySavingsAfterExpenses)}</li>
             <li>Down Payment: ${formatNumber(stay.downPayment)}</li>
-            <li>Required Down Payment (Non-Negative Savings): ${formatNumber(stay.requiredDownPaymentNonNegative)}</li>
-            <li>Savings After Buy: ${formatNumber(stay.savingsAfterBuy)}</li>
+            <li>Required Down Payment: ${formatNumber(stay.requiredDownPayment)}</li>
+            <li>Savings After Required Down Payment: ${formatNumber(stay.savingsAfterRequiredDownPayment)}</li>
+            <li>New Monthly Savings: ${formatNumber(stay.newMonthlySavings)}</li>
             <li>Future Savings (Year {stay.year}): ${formatNumber(stay.futureSavings)}</li>
             <li>Net Worth (Year {stay.year}): ${formatNumber(stay.netWorth)}</li>
           </ul>
           <p className="font-semibold">Key Considerations:</p>
-          <p>Buying now locks in a home price of ${formatNumber(inputs.newHomePrice)} but requires a ${formatNumber(buyNow.downPayment)} down payment (${formatNumber(buyNow.requiredDownPaymentNonNegative)} to avoid negative savings) and a monthly payment of ${formatNumber(buyNow.totalPayment)}, leaving ${formatNumber(buyNow.monthlySavingsAfterExpenses)} in monthly savings. Your savings grow to ${formatNumber(buyNow.futureSavings)} and net worth to ${formatNumber(buyNow.futureNetWorth)} in 3 years.</p>
-          <p>Waiting {stay.year} year{stay.year > 1 ? 's' : ''} allows you to save ${formatNumber(inputs.monthlySavingsStay)} monthly, growing savings to ${formatNumber(stay.futureSavings)}. The home price rises to ${formatNumber(stay.calculations.homeValues.futureNewHomePrice.split(' = ')[1].replace('$', '').replace(/,/g, ''))}, requiring a ${formatNumber(stay.downPayment)} down payment (${formatNumber(stay.requiredDownPaymentNonNegative)} for non-negative savings). Monthly savings after buying are ${formatNumber(stay.monthlySavingsAfterExpenses)}, with a net worth of ${formatNumber(stay.netWorth)}.</p>
-          <p><strong>Recommendation:</strong> Buy now if you can afford the payments and want equity growth. Wait if you need more savings or prefer lower payments now.</p>
+          <p>Buying now locks in a home price of ${formatNumber(inputs.newHomePrice)} but requires a ${formatNumber(buyNow.downPayment)} down payment (or ${formatNumber(buyNow.requiredDownPayment)} to achieve $${formatNumber(inputs.monthlySavingsBuy)} monthly savings, leaving ${formatNumber(buyNow.savingsAfterRequiredDownPayment)} in savings). Monthly savings are ${formatNumber(buyNow.monthlySavingsAfterExpenses)}, savings grow to ${formatNumber(buyNow.futureSavings)}, and net worth reaches ${formatNumber(buyNow.futureNetWorth)} in 3 years.</p>
+          <p>Waiting {stay.year} year{stay.year > 1 ? 's' : ''} allows saving ${formatNumber(inputs.monthlySavingsStay)} monthly, growing savings to ${formatNumber(stay.futureSavings)}. The home price rises to ${formatNumber(stay.calculations.homeValues.futureNewHomePrice.split(' = ')[1].replace('$', '').replace(/,/g, ''))}, requiring a ${formatNumber(stay.downPayment)} down payment (or ${formatNumber(stay.requiredDownPayment)} for $${formatNumber(inputs.monthlySavingsBuy)} monthly savings, leaving ${formatNumber(stay.savingsAfterRequiredDownPayment)} in savings). New monthly savings are ${formatNumber(stay.newMonthlySavings)}, with a net worth of ${formatNumber(stay.netWorth)}.</p>
+          <p><strong>Recommendation:</strong> Buy now if you can afford the payments and want equity growth. Wait if you need more savings or prefer higher monthly savings now.</p>
         </div>
         <ReactModal
           isOpen={modalOpen}
