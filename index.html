@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home Purchase Comparison</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.4/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4">
+  <div id="root"></div>
+  <script type="text/babel">
+    function App() {
+      const [inputs, setInputs] = React.useState({
+        currentHomePrice: 300000,
+        newHomePrice: 400000,
+        currentEquity: 100000,
+        savings: 50000,
+        monthlyIncome: 6000,
+        monthlyDebt: 1500,
+        interestRate: 5,
+        loanTerm: 30,
+      });
+
+      const handleInputChange = (e) => {
+        setInputs({ ...inputs, [e.target.name]: parseFloat(e.target.value) || 0 });
+      };
+
+      const calculateLoan = (principal, rate, term) => {
+        const monthlyRate = rate / 100 / 12;
+        const n = term * 12;
+        const payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1);
+        let balance = principal;
+        const schedule = [];
+        for (let i = 0; i < n; i++) {
+          const interest = balance * monthlyRate;
+          const principalPayment = payment - interest;
+          balance -= principalPayment;
+          schedule.push({ month: i + 1, payment, principal: principalPayment, interest, balance });
+        }
+        return { payment, schedule };
+      };
+
+      const dti = (inputs.monthlyDebt + calculateLoan(inputs.newHomePrice - inputs.savings, inputs.interestRate, inputs.loanTerm).payment) / inputs.monthlyIncome;
+      const buyNow = {
+        loan: calculateLoan(inputs.newHomePrice - inputs.savings, inputs.interestRate, inputs.loanTerm),
+        netWorth: inputs.currentEquity + inputs.savings,
+        savings: 0,
+      };
+      const stay = [1, 2, 3].map((year) => {
+        const futureSavings = inputs.savings * Math.pow(1 + 0.03, year); // 3% annual savings growth
+        const futureHomePrice = inputs.newHomePrice * Math.pow(1 + 0.05, year); // 5% home price growth
+        return {
+          year,
+          loan: calculateLoan(futureHomePrice - futureSavings, inputs.interestRate, inputs.loanTerm),
+          netWorth: inputs.currentEquity * Math.pow(1 + 0.05, year) + futureSavings,
+          savings: futureSavings,
+        };
+      });
+
+      return (
+        <div class="max-w-4xl mx-auto bg-white p-6 rounded shadow">
+          <h1 class="text-2xl font-bold mb-4">Home Purchase Comparison</h1>
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block">Current Home Price ($):</label>
+              <input type="number" name="currentHomePrice" value={inputs.currentHomePrice} onChange={handleInputChange} class="border p-2 w-full" />
+            </div>
+            <div>
+              <label class="block">New Home Price ($):</label>
+              <input type="number" name="newHomePrice" value={inputs.newHomePrice} onChange={handleInputChange} class="border p-2 w-full" />
+            </div>
+            <div>
+              <label class="block">Current Equity ($):</label>
+              <input type="number" name="currentEquity" value={inputs.currentEquity} onChange={handleInputChange} class="border p-2 w-full" />
+            </div>
+            <div>
+              <label class="block">Savings ($):</label>
+              <input type="number" name="savings" value={inputs.savings} onChange={handleInputChange} class="border p-2 w-full" />
+            </div>
+            <div>
+              <label class="block">Monthly Income ($):</label>
+              <input type="number" name="monthlyIncome" value={inputs.monthlyIncome} onChange={handleInputChange} class="border p-2 w-full" />
+            </div>
+            <div>
+              <label class="block">Monthly Debt ($):</label>
+              <input type="number" name="monthlyDebt" value={inputs.monthlyDebt} onChange={handleInputChange} class="border p-2 w-full" />
+            </div>
+            <div>
+              <label class="block">Interest Rate (%):</label>
+              <input type="number" name="interestRate" value={inputs.interestRate} onChange={handleInputChange} class="border p-2 w-full" step="0.1" />
+            </div>
+            <div>
+              <label class="block">Loan Term (Years):</label>
+              <input type="number" name="loanTerm" value={inputs.loanTerm} onChange={handleInputChange} class="border p-2 w-full" />
+            </div>
+          </div>
+          <h2 class="text-xl font-semibold">Results</h2>
+          <p>Debt-to-Income Ratio: {(dti * 100).toFixed(2)}%</p>
+          <table class="w-full border-collapse border mt-4">
+            <thead>
+              <tr class="bg-gray-200">
+                <th class="border p-2">Scenario</th>
+                <th class="border p-2">Monthly Payment ($)</th>
+                <th class="border p-2">Savings ($)</th>
+                <th class="border p-2">Net Worth ($)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="border p-2">Buy Now</td>
+                <td class="border p-2">{buyNow.loan.payment.toFixed(2)}</td>
+                <td class="border p-2">{buyNow.savings.toFixed(2)}</td>
+                <td class="border p-2">{buyNow.netWorth.toFixed(2)}</td>
+              </tr>
+              {stay.map((s) => (
+                <tr key={s.year}>
+                  <td class="border p-2">Stay {s.year} Year{s.year > 1 ? 's' : ''}</td>
+                  <td class="border p-2">{s.loan.payment.toFixed(2)}</td>
+                  <td class="border p-2">{s.savings.toFixed(2)}</td>
+                  <td class="border p-2">{s.netWorth.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <h2 class="text-xl font-semibold mt-4">Amortization Schedule (Buy Now)</h2>
+          <table class="w-full border-collapse border mt-2">
+            <thead>
+              <tr class="bg-gray-200">
+                <th class="border p-2">Month</th>
+                <th class="border p-2">Payment ($)</th>
+                <th class="border p-2">Principal ($)</th>
+                <th class="border p-2">Interest ($)</th>
+                <th class="border p-2">Balance ($)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {buyNow.loan.schedule.slice(0, 12).map((month) => (
+                <tr key={month.month}>
+                  <td class="border p-2">{month.month}</td>
+                  <td class="border p-2">{month.payment.toFixed(2)}</td>
+                  <td class="border p-2">{month.principal.toFixed(2)}</td>
+                  <td class="border p-2">{month.interest.toFixed(2)}</td>
+                  <td class="border p-2">{month.balance.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
