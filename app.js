@@ -1,6 +1,8 @@
-const { Disclosure, Transition } = HeadlessUI;
-
 function App() {
+  // Check if HeadlessUI is defined
+  const HeadlessUI = window.HeadlessUI;
+  const hasHeadlessUI = !!HeadlessUI;
+
   const [inputs, setInputs] = React.useState({
     currentHomePrice: 800000,
     currentLoanBalance: 589000,
@@ -199,200 +201,133 @@ function App() {
     setModalOpen(true);
   };
 
+  // Fallback UI if HeadlessUI is not available
+  const renderInputSection = (title, fields) => (
+    <div className="mb-4">
+      <h3 className="text-sm font-medium bg-gray-700 px-4 py-2 rounded-lg">{title}</h3>
+      <div className="px-4 pt-4 pb-2 text-sm">
+        {fields.map(({ label, name, type, step, tooltip }) => (
+          <div key={name} className="mb-2 relative">
+            <label className="block">{label}</label>
+            <input
+              type={type}
+              name={name}
+              value={inputs[name]}
+              onChange={handleInputChange}
+              className="border p-2 w-full text-black"
+              step={step}
+            />
+            <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title={tooltip}>?</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderCollapsibleInputSection = hasHeadlessUI
+    ? ({ title, fields }) => {
+        const { Disclosure, Transition } = HeadlessUI;
+        return (
+          <Disclosure>
+            {({ open }) => (
+              <>
+                <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left bg-gray-700 rounded-lg hover:bg-gray-600">
+                  <span>{title}</span>
+                  <svg className={`${open ? 'transform rotate-180' : ''} w-5 h-5`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </Disclosure.Button>
+                <Transition
+                  enter="transition duration-100 ease-out"
+                  enterFrom="transform scale-95 opacity-0"
+                  enterTo="transform scale-100 opacity-100"
+                  leave="transition duration-75 ease-out"
+                  leaveFrom="transform scale-100 opacity-100"
+                  leaveTo="transform scale-95 opacity-0"
+                >
+                  <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm">
+                    {fields.map(({ label, name, type, step, tooltip }) => (
+                      <div key={name} className="mb-2 relative">
+                        <label className="block">{label}</label>
+                        <input
+                          type={type}
+                          name={name}
+                          value={inputs[name]}
+                          onChange={handleInputChange}
+                          className="border p-2 w-full text-black"
+                          step={step}
+                        />
+                        <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title={tooltip}>?</span>
+                      </div>
+                    ))}
+                  </Disclosure.Panel>
+                </Transition>
+              </>
+            )}
+          </Disclosure>
+        );
+      }
+    : renderInputSection;
+
+  const inputSections = [
+    {
+      title: 'Current Home',
+      fields: [
+        { label: 'Price ($):', name: 'currentHomePrice', type: 'number', tooltip: 'Current market value of your home' },
+        { label: 'Loan Balance ($):', name: 'currentLoanBalance', type: 'number', tooltip: 'Remaining mortgage balance' },
+        { label: 'Loan Rate (%):', name: 'currentLoanRate', type: 'number', step: '0.1', tooltip: 'Annual interest rate of current mortgage' },
+        { label: 'Loan Term (Years):', name: 'currentLoanTerm', type: 'number', tooltip: 'Total term of current mortgage' },
+        { label: 'Loan Start Date:', name: 'currentLoanStartDate', type: 'date', tooltip: 'Start date of current mortgage' },
+        { label: 'Appreciation Rate (%):', name: 'currentHomeAppreciation', type: 'number', step: '0.1', tooltip: 'Annual home value growth rate' },
+        { label: 'Realtor Fee (%):', name: 'realtorFeePercent', type: 'number', step: '0.1', tooltip: 'Commission for selling current home' },
+      ],
+    },
+    {
+      title: 'New Home',
+      fields: [
+        { label: 'Price ($):', name: 'newHomePrice', type: 'number', tooltip: 'Purchase price of new home' },
+        { label: 'Appreciation Rate (%):', name: 'newHomeAppreciation', type: 'number', step: '0.1', tooltip: 'Annual home value growth rate' },
+        { label: 'Loan Rate (%):', name: 'newLoanRate', type: 'number', step: '0.1', tooltip: 'Annual interest rate for new mortgage' },
+        { label: 'Loan Term (Years):', name: 'newLoanTerm', type: 'number', tooltip: 'Total term of new mortgage' },
+        { label: 'Down Payment (%):', name: 'downPaymentPercent', type: 'number', step: '0.1', tooltip: 'Percentage of new home price paid upfront' },
+        { label: 'Closing Cost (%):', name: 'closingCostPercent', type: 'number', step: '0.1', tooltip: 'Costs for finalizing new home purchase' },
+        { label: 'Property Tax (%):', name: 'propertyTaxPercent', type: 'number', step: '0.1', tooltip: 'Annual property tax rate' },
+        { label: 'Monthly Insurance ($):', name: 'insurance', type: 'number', tooltip: 'Monthly homeowners insurance cost' },
+      ],
+    },
+    {
+      title: 'Finances',
+      fields: [
+        { label: 'Savings ($):', name: 'savings', type: 'number', tooltip: 'Current cash savings' },
+        { label: 'Monthly Savings (Stay) ($):', name: 'monthlySavingsStay', type: 'number', tooltip: 'Monthly savings if staying in current home' },
+        { label: 'Monthly Savings (Buy) ($):', name: 'monthlySavingsBuy', type: 'number', tooltip: 'Target monthly savings after buying new home' },
+        { label: 'Savings Interest Rate (%):', name: 'savingsInterestRate', type: 'number', step: '0.1', tooltip: 'Annual return on savings' },
+        { label: 'Monthly Income ($):', name: 'monthlyIncome', type: 'number', tooltip: 'Current monthly income' },
+        { label: 'Income Growth (%):', name: 'incomeGrowthPercent', type: 'number', step: '0.1', tooltip: 'Annual income growth rate' },
+        { label: 'Monthly Expenses ($):', name: 'monthlyExpenses', type: 'number', tooltip: 'Current monthly expenses' },
+        { label: 'Inflation Rate (%):', name: 'inflationPercent', type: 'number', step: '0.1', tooltip: 'Annual expense inflation rate' },
+        { label: 'Monthly Debt ($):', name: 'monthlyDebt', type: 'number', tooltip: 'Monthly debt payments' },
+      ],
+    },
+  ];
+
   return (
     <div className="flex min-h-screen">
       {/* Sidebar for Inputs */}
       <div className="w-80 bg-gray-800 text-white p-4 overflow-y-auto">
         <h2 className="text-lg font-semibold mb-4">Input Parameters</h2>
-        <Disclosure defaultOpen>
-          {({ open }) => (
-            <>
-              <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left bg-gray-700 rounded-lg hover:bg-gray-600">
-                <span>Current Home</span>
-                <svg className={`${open ? 'transform rotate-180' : ''} w-5 h-5`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </Disclosure.Button>
-              <Transition
-                enter="transition duration-100 ease-out"
-                enterFrom="transform scale-95 opacity-0"
-                enterTo="transform scale-100 opacity-100"
-                leave="transition duration-75 ease-out"
-                leaveFrom="transform scale-100 opacity-100"
-                leaveTo="transform scale-95 opacity-0"
-              >
-                <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm">
-                  <div className="mb-2 relative">
-                    <label className="block">Price ($):</label>
-                    <input type="number" name="currentHomePrice" value={inputs.currentHomePrice} onChange={handleInputChange} className="border p-2 w-full text-black" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Current market value of your home">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Loan Balance ($):</label>
-                    <input type="number" name="currentLoanBalance" value={inputs.currentLoanBalance} onChange={handleInputChange} className="border p-2 w-full text-black" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Remaining mortgage balance">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Loan Rate (%):</label>
-                    <input type="number" name="currentLoanRate" value={inputs.currentLoanRate} onChange={handleInputChange} className="border p-2 w-full text-black" step="0.1" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Annual interest rate of current mortgage">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Loan Term (Years):</label>
-                    <input type="number" name="currentLoanTerm" value={inputs.currentLoanTerm} onChange={handleInputChange} className="border p-2 w-full text-black" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Total term of current mortgage">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Loan Start Date:</label>
-                    <input type="date" name="currentLoanStartDate" value={inputs.currentLoanStartDate} onChange={handleInputChange} className="border p-2 w-full text-black" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Start date of current mortgage">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Appreciation Rate (%):</label>
-                    <input type="number" name="currentHomeAppreciation" value={inputs.currentHomeAppreciation} onChange={handleInputChange} className="border p-2 w-full text-black" step="0.1" />
-                    <span className="annual top-0 right-0 text-xs text-gray-400 cursor-help" title="Annual home value growth rate">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Realtor Fee (%):</label>
-                    <input type="number" name="realtorFeePercent" value={inputs.realtorFeePercent} onChange={handleInputChange} className="border p-2 w-full text-black" step="0.1" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Commission for selling current home">?</span>
-                  </div>
-                </Disclosure.Panel>
-              </Transition>
-            </>
-          )}
-        </Disclosure>
-        <Disclosure>
-          {({ open }) => (
-            <>
-              <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left bg-gray-700 rounded-lg hover:bg-gray-600">
-                <span>New Home</span>
-                <svg className={`${open ? 'transform rotate-180' : ''} w-5 h-5`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </Disclosure.Button>
-              <Transition
-                enter="transition duration-100 ease-out"
-                enterFrom="transform scale-95 opacity-0"
-                enterTo="transform scale-100 opacity-100"
-                leave="transition duration-75 ease-out"
-                leaveFrom="transform scale-100 opacity-100"
-                leaveTo="transform scale-95 opacity-0"
-              >
-                <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm">
-                  <div className="mb-2 relative">
-                    <label className="block">Price ($):</label>
-                    <input type="number" name="newHomePrice" value={inputs.newHomePrice} onChange={handleInputChange} className="border p-2 w-full text-black" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Purchase price of new home">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Appreciation Rate (%):</label>
-                    <input type="number" name="newHomeAppreciation" value={inputs.newHomeAppreciation} onChange={handleInputChange} className="border p-2 w-full text-black" step="0.1" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Annual home value growth rate">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Loan Rate (%):</label>
-                    <input type="number" name="newLoanRate" value={inputs.newLoanRate} onChange={handleInputChange} className="border p-2 w-full text-black" step="0.1" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Annual interest rate for new mortgage">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Loan Term (Years):</label>
-                    <input type="number" name="newLoanTerm" value={inputs.newLoanTerm} onChange={handleInputChange} className="border p-2 w-full text-black" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Total term of new mortgage">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Down Payment (%):</label>
-                    <input type="number" name="downPaymentPercent" value={inputs.downPaymentPercent} onChange={handleInputChange} className="border p-2 w-full text-black" step="0.1" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Percentage of new home price paid upfront">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Closing Cost (%):</label>
-                    <input type="number" name="closingCostPercent" value={inputs.closingCostPercent} onChange={handleInputChange} className="border p-2 w-full text-black" step="0.1" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Costs for finalizing new home purchase">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Property Tax (%):</label>
-                    <input type="number" name="propertyTaxPercent" value={inputs.propertyTaxPercent} onChange={handleInputChange} className="border p-2 w-full text-black" step="0.1" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Annual property tax rate">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Monthly Insurance ($):</label>
-                    <input type="number" name="insurance" value={inputs.insurance} onChange={handleInputChange} className="border p-2 w-full text-black" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Monthly homeowners insurance cost">?</span>
-                  </div>
-                </Disclosure.Panel>
-              </Transition>
-            </>
-          )}
-        </Disclosure>
-        <Disclosure>
-          {({ open }) => (
-            <>
-              <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left bg-gray-700 rounded-lg hover:bg-gray-600">
-                <span>Finances</span>
-                <svg className={`${open ? 'transform rotate-180' : ''} w-5 h-5`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </Disclosure.Button>
-              <Transition
-                enter="transition duration-100 ease-out"
-                enterFrom="transform scale-95 opacity-0"
-                enterTo="transform scale-100 opacity-100"
-                leave="transition duration-75 ease-out"
-                leaveFrom="transform scale-100 opacity-100"
-                leaveTo="transform scale-95 opacity-0"
-              >
-                <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm">
-                  <div className="mb-2 relative">
-                    <label className="block">Savings ($):</label>
-                    <input type="number" name="savings" value={inputs.savings} onChange={handleInputChange} className="border p-2 w-full text-black" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Current cash savings">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Monthly Savings (Stay) ($):</label>
-                    <input type="number" name="monthlySavingsStay" value={inputs.monthlySavingsStay} onChange={handleInputChange} className="border p-2 w-full text-black" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Monthly savings if staying in current home">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Monthly Savings (Buy) ($):</label>
-                    <input type="number" name="monthlySavingsBuy" value={inputs.monthlySavingsBuy} onChange={handleInputChange} className="border p-2 w-full text-black" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Target monthly savings after buying new home">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Savings Interest Rate (%):</label>
-                    <input type="number" name="savingsInterestRate" value={inputs.savingsInterestRate} onChange={handleInputChange} className="border p-2 w-full text-black" step="0.1" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Annual return on savings">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Monthly Income ($):</label>
-                    <input type="number" name="monthlyIncome" value={inputs.monthlyIncome} onChange={handleInputChange} className="border p-2 w-full text-black" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Current monthly income">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Income Growth (%):</label>
-                    <input type="number" name="incomeGrowthPercent" value={inputs.incomeGrowthPercent} onChange={handleInputChange} className="border p-2 w-full text-black" step="0.1" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Annual income growth rate">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Monthly Expenses ($):</label>
-                    <input type="number" name="monthlyExpenses" value={inputs.monthlyExpenses} onChange={handleInputChange} className="border p-2 w-full text-black" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Current monthly expenses">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Inflation Rate (%):</label>
-                    <input type="number" name="inflationPercent" value={inputs.inflationPercent} onChange={handleInputChange} className="border p-2 w-full text-black" step="0.1" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Annual expense inflation rate">?</span>
-                  </div>
-                  <div className="mb-2 relative">
-                    <label className="block">Monthly Debt ($):</label>
-                    <input type="number" name="monthlyDebt" value={inputs.monthlyDebt} onChange={handleInputChange} className="border p-2 w-full text-black" />
-                    <span className="absolute top-0 right-0 text-xs text-gray-400 cursor-help" title="Monthly debt payments">?</span>
-                  </div>
-                </Disclosure.Panel>
-              </Transition>
-            </>
-          )}
-        </Disclosure>
+        {hasHeadlessUI ? (
+          inputSections.map((section, idx) => (
+            <div key={idx}>{renderCollapsibleInputSection(section)}</div>
+          ))
+        ) : (
+          <>
+            {inputSections.map((section, idx) => (
+              <div key={idx}>{renderInputSection(section.title, section.fields)}</div>
+            ))}
+            <p className="text-red-400 text-sm">Note: Collapsible sections unavailable due to missing Headless UI library.</p>
+          </>
+        )}
         <div className="mt-4">
           <label className="block text-sm font-medium">Compare in Year:</label>
           <select value={comparisonYear} onChange={(e) => setComparisonYear(parseInt(e.target.value))} className="border p-2 w-full text-black">
