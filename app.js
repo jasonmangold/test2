@@ -1,32 +1,40 @@
 function App() {
   const [inputs, setInputs] = React.useState({
-    currentHomePrice: 300000,
-    currentLoanBalance: 200000,
-    currentLoanRate: 4,
+    currentHomePrice: 800000,
+    currentLoanBalance: 554000,
+    currentLoanRate: 3.49,
     currentLoanTerm: 30,
-    currentHomeAppreciation: 5,
-    newHomePrice: 400000,
-    newHomeAppreciation: 5,
-    currentEquity: 100000,
-    savings: 50000,
-    monthlySavings: 1000,
-    savingsInterestRate: 3,
-    monthlyIncome: 6000,
-    monthlyDebt: 1500,
-    newLoanRate: 5,
+    currentLoanStartDate: '2022-02-01',
+    currentHomeAppreciation: 3,
+    newHomePrice: 1169000,
+    newHomeAppreciation: 3,
+    currentEquity: 0,
+    savings: 120000,
+    monthlySavingsStay: 3500,
+    monthlySavingsBuy: 566800,
+    savingsInterestRate: 3.5,
+    monthlyIncome: 16000,
+    monthlyDebt: 150250,
+    newLoanRate: 6.75,
     newLoanTerm: 30,
     downPaymentPercent: 20,
-    propertyTaxPercent: 1.2,
-    insurance: 100,
+    propertyTaxPercent: 1.25,
+    insurance: 200,
     realtorFeePercent: 6,
-    closingCostPercent: 3,
+    closingCostPercent: 2,
   });
 
   const handleInputChange = (e) => {
-    setInputs({ ...inputs, [e.target.name]: parseFloat(e.target.value) || 0 });
+    setInputs({ ...inputs, [e.target.name]: e.target.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value });
   };
 
   const formatNumber = (num) => Math.round(num).toLocaleString();
+
+  const calculateMonthsElapsed = (startDate) => {
+    const start = new Date(startDate);
+    const today = new Date('2025-05-23');
+    return (today.getFullYear() - start.getFullYear()) * 12 + today.getMonth() - start.getMonth();
+  };
 
   const calculateLoan = (principal, rate, term, monthsElapsed = 0) => {
     const monthlyRate = rate / 100 / 12;
@@ -54,7 +62,7 @@ function App() {
     const monthlyPropertyTax = (inputs.newHomePrice * inputs.propertyTaxPercent) / 100 / 12;
     const totalPayment = loan.payment + monthlyPropertyTax + inputs.insurance;
     const dti = (inputs.monthlyDebt + totalPayment) / inputs.monthlyIncome;
-    const futureSavings = savingsAfterBuy * Math.pow(1 + inputs.savingsInterestRate / 100, 3) + inputs.monthlySavings * 12 * 3 * Math.pow(1 + inputs.savingsInterestRate / 100, 1.5);
+    const futureSavings = savingsAfterBuy * Math.pow(1 + inputs.savingsInterestRate / 100, 3) + inputs.monthlySavingsBuy * 12 * 3 * Math.pow(1 + inputs.savingsInterestRate / 100, 1.5);
     const futureEquity = inputs.newHomePrice * Math.pow(1 + inputs.newHomeAppreciation / 100, 3) - calculateLoan(inputs.newHomePrice - downPayment, inputs.newLoanRate, inputs.newLoanTerm, 36).remainingBalance;
     return {
       loan,
@@ -73,7 +81,7 @@ function App() {
         monthlyPropertyTax: `${inputs.propertyTaxPercent}% of $${formatNumber(inputs.newHomePrice)} / 12 = $${formatNumber(monthlyPropertyTax)}`,
         totalPayment: `Loan ($${formatNumber(loan.payment)}) + Tax ($${formatNumber(monthlyPropertyTax)}) + Insurance ($${formatNumber(inputs.insurance)}) = $${formatNumber(totalPayment)}`,
         dti: `(Debt ($${formatNumber(inputs.monthlyDebt)}) + Payment ($${formatNumber(totalPayment)})) / Income ($${formatNumber(inputs.monthlyIncome)}) = ${(dti * 100).toFixed(2)}%`,
-        futureSavings: `Initial ($${formatNumber(savingsAfterBuy)}) * (1 + ${inputs.savingsInterestRate / 100})^3 + Monthly ($${formatNumber(inputs.monthlySavings)} * 12 * 3) * (1 + ${inputs.savingsInterestRate / 100})^1.5 = $${formatNumber(futureSavings)}`,
+        futureSavings: `Initial ($${formatNumber(savingsAfterBuy)}) * (1 + ${inputs.savingsInterestRate / 100})^3 + Monthly ($${formatNumber(inputs.monthlySavingsBuy)} * 12 * 3) * (1 + ${inputs.savingsInterestRate / 100})^1.5 = $${formatNumber(futureSavings)}`,
         futureEquity: `Future Price ($${formatNumber(inputs.newHomePrice * Math.pow(1 + inputs.newHomeAppreciation / 100, 3))}) - Loan Balance ($${formatNumber(calculateLoan(inputs.newHomePrice - downPayment, inputs.newLoanRate, inputs.newLoanTerm, 36).remainingBalance)}) = $${formatNumber(futureEquity)}`,
       },
     };
@@ -81,8 +89,9 @@ function App() {
 
   const calculateStay = (years) => {
     const months = years * 12;
-    const currentLoan = calculateLoan(inputs.currentLoanBalance, inputs.currentLoanRate, inputs.currentLoanTerm, months);
-    const futureSavings = inputs.savings * Math.pow(1 + inputs.savingsInterestRate / 100, years) + inputs.monthlySavings * 12 * years * Math.pow(1 + inputs.savingsInterestRate / 100, years / 2);
+    const monthsElapsed = calculateMonthsElapsed(inputs.currentLoanStartDate);
+    const currentLoan = calculateLoan(inputs.currentLoanBalance, inputs.currentLoanRate, inputs.currentLoanTerm, monthsElapsed + months);
+    const futureSavings = inputs.savings * Math.pow(1 + inputs.savingsInterestRate / 100, years) + inputs.monthlySavingsStay * 12 * years * Math.pow(1 + inputs.savingsInterestRate / 100, years / 2);
     const futureCurrentHomePrice = inputs.currentHomePrice * Math.pow(1 + inputs.currentHomeAppreciation / 100, years);
     const futureEquity = futureCurrentHomePrice - currentLoan.remainingBalance;
     const futureNewHomePrice = inputs.newHomePrice * Math.pow(1 + inputs.newHomeAppreciation / 100, years);
@@ -103,7 +112,7 @@ function App() {
       totalPayment,
       dti,
       calculations: {
-        futureSavings: `Initial ($${formatNumber(inputs.savings)}) * (1 + ${inputs.savingsInterestRate / 100})^${years} + Monthly ($${formatNumber(inputs.monthlySavings)} * 12 * ${years}) * (1 + ${inputs.savingsInterestRate / 100})^${years}/2 = $${formatNumber(futureSavings)}`,
+        futureSavings: `Initial ($${formatNumber(inputs.savings)}) * (1 + ${inputs.savingsInterestRate / 100})^${years} + Monthly ($${formatNumber(inputs.monthlySavingsStay)} * 12 * ${years}) * (1 + ${inputs.savingsInterestRate / 100})^${years}/2 = $${formatNumber(futureSavings)}`,
         futureCurrentHomePrice: `$${formatNumber(inputs.currentHomePrice)} * (1 + ${inputs.currentHomeAppreciation / 100})^${years} = $${formatNumber(futureCurrentHomePrice)}`,
         futureEquity: `Future Price ($${formatNumber(futureCurrentHomePrice)}) - Loan Balance ($${formatNumber(currentLoan.remainingBalance)}) = $${formatNumber(futureEquity)}`,
         futureNewHomePrice: `$${formatNumber(inputs.newHomePrice)} * (1 + ${inputs.newHomeAppreciation / 100})^${years} = $${formatNumber(futureNewHomePrice)}`,
@@ -143,6 +152,10 @@ function App() {
           <div>
             <label className="block">Loan Term (Years):</label>
             <input type="number" name="currentLoanTerm" value={inputs.currentLoanTerm} onChange={handleInputChange} className="border p-2 w-full" />
+          </div>
+          <div>
+            <label className="block">Loan Start Date:</label>
+            <input type="date" name="currentLoanStartDate" value={inputs.currentLoanStartDate} onChange={handleInputChange} className="border p-2 w-full" />
           </div>
           <div>
             <label className="block">Appreciation Rate (%):</label>
@@ -199,8 +212,12 @@ function App() {
             <input type="number" name="savings" value={inputs.savings} onChange={handleInputChange} className="border p-2 w-full" />
           </div>
           <div>
-            <label className="block">Monthly Savings ($):</label>
-            <input type="number" name="monthlySavings" value={inputs.monthlySavings} onChange={handleInputChange} className="border p-2 w-full" />
+            <label className="block">Monthly Savings (Stay) ($):</label>
+            <input type="number" name="monthlySavingsStay" value={inputs.monthlySavingsStay} onChange={handleInputChange} className="border p-2 w-full" />
+          </div>
+          <div>
+            <label className="block">Monthly Savings (Buy) ($):</label>
+            <input type="number" name="monthlySavingsBuy" value={inputs.monthlySavingsBuy} onChange={handleInputChange} className="border p-2 w-full" />
           </div>
           <div>
             <label className="block">Savings Interest Rate (%):</label>
