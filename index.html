@@ -8,8 +8,23 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.4/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@headlessui/react@1.7.13/dist/headlessui.umd.js"></script>
+  <script src="https://unpkg.com/react-modal@3.16.1/dist/react-modal.min.js"></script>
+  <style>
+    .ReactModal__Overlay {
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+    }
+    .ReactModal__Content {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 p-4">
+<body className="bg-gray-100 p-4">
   <div id="root"></div>
   <script type="text/babel" src="app.js"></script>
 </body>
